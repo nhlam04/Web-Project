@@ -1,14 +1,139 @@
-import React from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 
 // Dữ liệu mẫu cho sản phẩm
 const featuredProducts = [
-  { id: 1, name: "Tai nghe Chống ồn Pro", price: "2.490.000đ", image: "https://images.unsplash.com/photo-1505740420928-5e560c06d30e?w=500&q=80" },
-  { id: 2, name: "Đồng hồ Thể thao", price: "3.150.000đ", image: "https://images.unsplash.com/photo-1523275335684-37898b6baf30?w=500&q=80" },
-  { id: 3, name: "Kính mát Thời trang", price: "850.000đ", image: "https://images.unsplash.com/photo-1572635196237-14b3f281501f?w=500&q=80" },
-  { id: 4, name: "Loa Bluetooth Mini", price: "1.200.000đ", image: "https://images.unsplash.com/photo-1608043152269-423dbba4e7e1?w=500&q=80" },
+  { id: 1, sellerId: 'seller-001', name: 'Tai nghe Chống ồn Pro', unitPrice: 2490000, image: 'https://images.unsplash.com/photo-1505740420928-5e560c06d30e?w=500&q=80' },
+  { id: 2, sellerId: 'seller-002', name: 'Đồng hồ Thể thao', unitPrice: 3150000, image: 'https://images.unsplash.com/photo-1523275335684-37898b6baf30?w=500&q=80' },
+  { id: 3, sellerId: 'seller-003', name: 'Kính mát Thời trang', unitPrice: 850000, image: 'https://images.unsplash.com/photo-1572635196237-14b3f281501f?w=500&q=80' },
+  { id: 4, sellerId: 'seller-001', name: 'Loa Bluetooth Mini', unitPrice: 1200000, image: 'https://images.unsplash.com/photo-1608043152269-423dbba4e7e1?w=500&q=80' },
 ];
 
+const ORDERING_BASE_URL = process.env.REACT_APP_ORDERING_URL || 'http://localhost:8083';
+const CART_STORAGE_KEY = 'ordering_cart_id';
+const DEMO_USER_ID = 'user-demo-001';
+
+function formatVnd(value) {
+  return new Intl.NumberFormat('vi-VN').format(value) + 'đ';
+}
+
+async function parseResponse(response) {
+  const payload = await response.json().catch(() => ({}));
+  if (!response.ok) {
+    const message = payload?.error?.message || 'Không thể kết nối Ordering Service';
+    throw new Error(message);
+  }
+  return payload.data;
+}
+
+async function createCart() {
+  const response = await fetch(`${ORDERING_BASE_URL}/api/v1/carts`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ userId: DEMO_USER_ID, currency: 'VND' }),
+  });
+
+  const cart = await parseResponse(response);
+  localStorage.setItem(CART_STORAGE_KEY, cart.id);
+  return cart;
+}
+
+async function getCart(cartId) {
+  const response = await fetch(`${ORDERING_BASE_URL}/api/v1/carts/${cartId}`);
+  return parseResponse(response);
+}
+
+async function getOrCreateCart() {
+  const storedCartId = localStorage.getItem(CART_STORAGE_KEY);
+
+  if (storedCartId) {
+    try {
+      return await getCart(storedCartId);
+    } catch (error) {
+      localStorage.removeItem(CART_STORAGE_KEY);
+    }
+  }
+
+  return createCart();
+}
+
+async function addProductToCart(cartId, product) {
+  const response = await fetch(`${ORDERING_BASE_URL}/api/v1/carts/${cartId}/items`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      productId: String(product.id),
+      sellerId: product.sellerId,
+      name: product.name,
+      quantity: 1,
+      unitPrice: product.unitPrice,
+    }),
+  });
+  return parseResponse(response);
+}
+
 const LandingPage = () => {
+  const [cart, setCart] = useState(null);
+  const [isCartOpen, setIsCartOpen] = useState(false);
+  const [isCartBusy, setIsCartBusy] = useState(false);
+  const [statusMessage, setStatusMessage] = useState('');
+  const cartCount = useMemo(() => {
+    if (!cart?.totals?.totalQuantity) {
+      return 0;
+    }
+    return cart.totals.totalQuantity;
+  }, [cart]);
+
+  useEffect(() => {
+    let active = true;
+
+    async function syncCart() {
+      try {
+        const currentCart = await getOrCreateCart();
+        if (active) {
+          setCart(currentCart);
+        }
+      } catch (error) {
+        if (active) {
+          setStatusMessage('Không thể tải giỏ hàng. Vui lòng kiểm tra Ordering Service.');
+        }
+      }
+    }
+
+    syncCart();
+
+    return () => {
+      active = false;
+    };
+  }, []);
+
+  async function handleOpenCart() {
+    setIsCartOpen(true);
+    setIsCartBusy(true);
+    try {
+      const currentCart = await getOrCreateCart();
+      setCart(currentCart);
+      setStatusMessage('');
+    } catch (error) {
+      setStatusMessage(error.message);
+    } finally {
+      setIsCartBusy(false);
+    }
+  }
+
+  async function handleAddToCart(product) {
+    setIsCartBusy(true);
+    try {
+      const currentCart = cart || (await getOrCreateCart());
+      const nextCart = await addProductToCart(currentCart.id, product);
+      setCart(nextCart);
+      setStatusMessage(`Đã thêm ${product.name} vào giỏ hàng`);
+    } catch (error) {
+      setStatusMessage(error.message);
+    } finally {
+      setIsCartBusy(false);
+    }
+  }
+
   return (
     <>
       {/* CHÈN CSS TRỰC TIẾP VÀO COMPONENT */}
@@ -27,6 +152,7 @@ const LandingPage = () => {
         .nav-links a:hover { color: #4f46e5; }
         .cart-btn { background: none; border: none; font-size: 20px; cursor: pointer; position: relative; }
         .cart-badge { position: absolute; top: -8px; right: -10px; background-color: #ef4444; color: white; font-size: 12px; font-weight: bold; padding: 2px 6px; border-radius: 50%; }
+        .status-message { max-width: 1200px; margin: 14px auto 0; padding: 10px 14px; border-radius: 8px; background-color: #ecfeff; color: #0f766e; border: 1px solid #99f6e4; }
 
         /* Hero Section */
         .hero { background-color: #eef2ff; padding: 60px 20px; }
@@ -79,6 +205,20 @@ const LandingPage = () => {
         .newsletter button:hover { background-color: #4338ca; }
         .footer-bottom { text-align: center; padding-top: 20px; border-top: 1px solid #374151; font-size: 14px; }
 
+        /* Cart drawer */
+        .cart-overlay { position: fixed; inset: 0; background: rgba(17, 24, 39, 0.45); z-index: 120; display: flex; justify-content: flex-end; }
+        .cart-panel { width: min(100%, 420px); background: #ffffff; height: 100%; display: flex; flex-direction: column; box-shadow: -10px 0 30px rgba(0, 0, 0, 0.12); }
+        .cart-panel-header { display: flex; align-items: center; justify-content: space-between; padding: 16px 18px; border-bottom: 1px solid #e5e7eb; }
+        .cart-panel-header h3 { font-size: 20px; color: #111827; }
+        .close-btn { border: 0; background: #f3f4f6; width: 32px; height: 32px; border-radius: 8px; cursor: pointer; }
+        .cart-panel-body { padding: 16px 18px; overflow: auto; flex: 1; }
+        .cart-item { padding: 10px 0; border-bottom: 1px dashed #e5e7eb; }
+        .cart-item-row { display: flex; justify-content: space-between; gap: 12px; }
+        .cart-item-name { font-weight: 600; color: #1f2937; }
+        .cart-item-meta { font-size: 13px; color: #6b7280; margin-top: 4px; }
+        .cart-total { margin-top: 14px; padding: 12px; border-radius: 8px; background: #eef2ff; color: #1f2937; font-weight: 700; }
+        .cart-empty { color: #6b7280; }
+
         /* Responsive */
         @media (max-width: 768px) {
           .hero-content { flex-direction: column; text-align: center; }
@@ -98,12 +238,14 @@ const LandingPage = () => {
               <a href="#about">Về chúng tôi</a>
             </nav>
             <div className="header-actions">
-              <button className="cart-btn">
-                🛒 <span className="cart-badge">3</span>
+              <button className="cart-btn" onClick={handleOpenCart}>
+                🛒 <span className="cart-badge">{cartCount}</span>
               </button>
             </div>
           </div>
         </header>
+
+        {statusMessage ? <div className="status-message">{statusMessage}</div> : null}
 
         {/* Hero Section */}
         <section id="home" className="hero">
@@ -139,13 +281,48 @@ const LandingPage = () => {
                 </div>
                 <div className="product-info">
                   <h3>{product.name}</h3>
-                  <p className="price">{product.price}</p>
-                  <button className="btn-add-cart">Thêm vào giỏ</button>
+                  <p className="price">{formatVnd(product.unitPrice)}</p>
+                  <button className="btn-add-cart" onClick={() => handleAddToCart(product)} disabled={isCartBusy}>
+                    {isCartBusy ? 'Đang xử lý...' : 'Thêm vào giỏ'}
+                  </button>
                 </div>
               </div>
             ))}
           </div>
         </section>
+
+        {isCartOpen ? (
+          <div className="cart-overlay" onClick={() => setIsCartOpen(false)}>
+            <aside className="cart-panel" onClick={(event) => event.stopPropagation()}>
+              <div className="cart-panel-header">
+                <h3>Giỏ hàng của bạn</h3>
+                <button className="close-btn" onClick={() => setIsCartOpen(false)}>x</button>
+              </div>
+              <div className="cart-panel-body">
+                {isCartBusy ? <p>Đang tải giỏ hàng...</p> : null}
+                {!isCartBusy && cart?.items?.length ? (
+                  <>
+                    {cart.items.map((item) => (
+                      <div key={item.productId} className="cart-item">
+                        <div className="cart-item-row">
+                          <div>
+                            <p className="cart-item-name">{item.name}</p>
+                            <p className="cart-item-meta">Số lượng: {item.quantity}</p>
+                          </div>
+                          <p>{formatVnd(item.unitPrice * item.quantity)}</p>
+                        </div>
+                      </div>
+                    ))}
+                    <div className="cart-total">
+                      Tổng SL: {cart.totals?.totalQuantity || 0} | Tạm tính: {formatVnd(cart.totals?.subtotal || 0)}
+                    </div>
+                  </>
+                ) : null}
+                {!isCartBusy && !cart?.items?.length ? <p className="cart-empty">Giỏ hàng đang trống.</p> : null}
+              </div>
+            </aside>
+          </div>
+        ) : null}
 
         {/* Footer */}
         <footer id="about" className="footer">
