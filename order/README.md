@@ -30,6 +30,13 @@ Node.js service for cart and order management in a microservice e-commerce syste
 
    GET http://localhost:8083/health
 
+5. Run smoke test (requires PostgreSQL running):
+
+  npm run smoke
+
+The smoke test waits for DB readiness, validates checkout + fulfillment confirmation,
+and validates cancellation/outbox behavior.
+
 ## Configuration
 
 Environment variables:
@@ -41,6 +48,17 @@ Environment variables:
 - `DB_PASS` (default: `password123`)
 - `DB_NAME` (default: `microservices_db`)
 - `DB_POOL_MAX` (default: `10`)
+- `RABBITMQ_URL` (default: `amqp://admin:admin123@localhost:5672`)
+- `RABBITMQ_EXCHANGE` (default: `ecommerce.events`)
+- `RABBITMQ_EXCHANGE_TYPE` (default: `topic`)
+- `OUTBOX_PUBLISHER_ENABLED` (default: `true`)
+- `OUTBOX_PUBLISHER_POLL_MS` (default: `3000`)
+- `OUTBOX_PUBLISHER_BATCH_SIZE` (default: `50`)
+- `FULFILLMENT_CONSUMER_ENABLED` (default: `true`)
+- `FULFILLMENT_CONSUMER_QUEUE` (default: `ordering.fulfillment-events`)
+- `FULFILLMENT_CONSUMER_ROUTING_KEYS` (default: `fulfillment.seller-confirmed,fulfillment.delivery.updated,fulfillment.completed`)
+- `FULFILLMENT_CONSUMER_PREFETCH` (default: `20`)
+- `FULFILLMENT_CONSUMER_RECONNECT_MS` (default: `5000`)
 
 Copy `.env.example` to `.env` and adjust values if needed.
 
@@ -51,6 +69,18 @@ On startup, the service initializes these tables (if missing):
 - `ordering.orders`
 - `ordering.order_items`
 - `ordering.outbox_events`
+
+Outbox routing keys:
+
+- `OrderPlaced` -> `order.created`
+- `OrderCancelled` -> `order.cancelled`
+- `OrderStatusUpdated` -> `order.status.updated`
+
+Inbound fulfillment routing keys consumed:
+
+- `fulfillment.seller-confirmed` -> `SellerOrderConfirmed`
+- `fulfillment.delivery.updated` -> `DeliveryUpdated`
+- `fulfillment.completed` -> `OrderCompleted`
 
 ## Order state machine
 

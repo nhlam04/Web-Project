@@ -1,5 +1,6 @@
 const { randomUUID } = require("crypto");
 const { getPool, withTransaction } = require("../db/postgres");
+const { getRoutingMetadata } = require("../messaging/eventRouting");
 
 function nowIso() {
   return new Date().toISOString();
@@ -298,11 +299,14 @@ async function listOrdersByUser(userId, client) {
 
 async function pushOutboxEvent(event, client) {
   const db = client || getPool();
+  const routing = getRoutingMetadata(event.eventType);
   const outbox = {
     id: randomUUID(),
     aggregateType: "ORDER",
     aggregateId: event.aggregateId,
     eventType: event.eventType,
+    exchangeName: event.exchangeName || routing.exchangeName,
+    routingKey: event.routingKey || routing.routingKey,
     payload: event.payload,
     status: "PENDING",
     createdAt: nowIso(),
@@ -312,15 +316,18 @@ async function pushOutboxEvent(event, client) {
   await db.query(
     `
       INSERT INTO ordering.outbox_events (
-        id, aggregate_type, aggregate_id, event_type, payload, status, created_at, published_at
+        id, aggregate_type, aggregate_id, event_type, exchange_name, routing_key,
+        payload, status, created_at, published_at
       )
-      VALUES ($1, $2, $3, $4, $5::jsonb, $6, $7::timestamptz, NULL)
+      VALUES ($1, $2, $3, $4, $5, $6, $7::jsonb, $8, $9::timestamptz, NULL)
     `,
     [
       outbox.id,
       outbox.aggregateType,
       outbox.aggregateId,
       outbox.eventType,
+      outbox.exchangeName,
+      outbox.routingKey,
       JSON.stringify(outbox.payload),
       outbox.status,
       outbox.createdAt,
@@ -334,7 +341,9 @@ async function listOutboxPending(client) {
   const db = client || getPool();
   const result = await db.query(
     `
-      SELECT id, aggregate_type, aggregate_id, event_type, payload, status, created_at, published_at
+      SELECT
+        id, aggregate_type, aggregate_id, event_type, exchange_name, routing_key,
+        payload, status, created_at, published_at
       FROM ordering.outbox_events
       WHERE status = 'PENDING'
       ORDER BY created_at ASC
@@ -346,6 +355,8 @@ async function listOutboxPending(client) {
     aggregateType: row.aggregate_type,
     aggregateId: row.aggregate_id,
     eventType: row.event_type,
+    exchangeName: row.exchange_name,
+    routingKey: row.routing_key,
     payload: row.payload,
     status: row.status,
     createdAt: row.created_at.toISOString(),
@@ -362,7 +373,9 @@ async function markOutboxPublished(outboxId, client) {
       SET status = 'PUBLISHED',
           published_at = $2::timestamptz
       WHERE id = $1
-      RETURNING id, aggregate_type, aggregate_id, event_type, payload, status, created_at, published_at
+      RETURNING
+        id, aggregate_type, aggregate_id, event_type, exchange_name, routing_key,
+        payload, status, created_at, published_at
     `,
     [outboxId, publishedAt],
   );
@@ -377,6 +390,8 @@ async function markOutboxPublished(outboxId, client) {
     aggregateType: row.aggregate_type,
     aggregateId: row.aggregate_id,
     eventType: row.event_type,
+    exchangeName: row.exchange_name,
+    routingKey: row.routing_key,
     payload: row.payload,
     status: row.status,
     createdAt: row.created_at.toISOString(),
