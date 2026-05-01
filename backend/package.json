@@ -6,12 +6,16 @@
     "packages/*"
   ],
   "scripts": {
+    "dev:gateway": "ts-node-dev -r tsconfig-paths/register --respawn --transpile-only apps/api-gateway/src/main.ts",
     "dev:fulfillment": "ts-node-dev -r tsconfig-paths/register --respawn --transpile-only apps/fulfillment-service/src/main.ts",
     "dev:review": "ts-node-dev -r tsconfig-paths/register --respawn --transpile-only apps/review-service/src/main.ts",
     "migration:run:fulfillment": "ts-node -r tsconfig-paths/register ./node_modules/typeorm/cli.js migration:run -d apps/fulfillment-service/src/database/typeorm.config.ts",
     "migration:run:review": "ts-node -r tsconfig-paths/register ./node_modules/typeorm/cli.js migration:run -d apps/review-service/src/database/typeorm.config.ts",
     "migration:revert:fulfillment": "ts-node -r tsconfig-paths/register ./node_modules/typeorm/cli.js migration:revert -d apps/fulfillment-service/src/database/typeorm.config.ts",
-    "migration:revert:review": "ts-node -r tsconfig-paths/register ./node_modules/typeorm/cli.js migration:revert -d apps/review-service/src/database/typeorm.config.ts"
+    "migration:revert:review": "ts-node -r tsconfig-paths/register ./node_modules/typeorm/cli.js migration:revert -d apps/review-service/src/database/typeorm.config.ts",
+    "test:fake-messenger": "ts-node -r tsconfig-paths/register scripts/fake-messenger.ts",
+    "infra:up": "docker compose -f infra/docker-compose.yml up -d",
+    "infra:down": "docker compose -f infra/docker-compose.yml down"
   },
   "dependencies": {
     "@nestjs/common": "^11.0.0",
@@ -26,6 +30,7 @@
   },
   "devDependencies": {
     "@types/amqplib": "^0.10.7",
+    "@types/express": "^5.0.0",
     "@types/node": "^22.10.2",
     "ts-node": "^10.9.2",
     "ts-node-dev": "^2.0.0",

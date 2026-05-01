@@ -2,22 +2,20 @@ import { Module } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { MessagingModule } from '@backend/messaging';
 import dataSource from './database/typeorm.config';
-import { FulfillmentEntity } from './modules/fulfillment/entities/fulfillment.entity';
-import { ProcessedMessageEntity } from './modules/inbox/processed-message.entity';
-import { OutboxEntity } from './modules/outbox/outbox.entity';
+import { FulfillmentModule } from './modules/fulfillment/fulfillment.module';
+import { OutboxModule } from './modules/outbox/outbox.module';
+import { ConsumersModule } from './modules/consumers/consumers.module';
 
 @Module({
   imports: [
     MessagingModule,
     TypeOrmModule.forRoot({
       ...dataSource.options,
-      autoLoadEntities: false,
+      autoLoadEntities: true,
     }),
-    TypeOrmModule.forFeature([
-      FulfillmentEntity,
-      ProcessedMessageEntity,
-      OutboxEntity,
-    ]),
+    FulfillmentModule,
+    OutboxModule,
+    ConsumersModule,
   ],
 })
 export class AppModule {}

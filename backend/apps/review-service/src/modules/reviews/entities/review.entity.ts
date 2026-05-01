@@ -6,8 +6,12 @@ import {
   UpdateDateColumn,
 } from 'typeorm';
 
+/**
+ * Tracks review eligibility: when a fulfillment is completed,
+ * the customer becomes eligible to leave a review for that order.
+ */
 @Entity({ name: 'review_eligibilities' })
-export class ReviewEntity {
+export class ReviewEligibilityEntity {
   @PrimaryGeneratedColumn('uuid')
   id: string;
 

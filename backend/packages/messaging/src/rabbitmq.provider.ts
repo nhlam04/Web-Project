@@ -15,7 +15,7 @@ export const rabbitConnectionProvider: Provider = {
 export const rabbitChannelProvider: Provider = {
   provide: RABBITMQ_CHANNEL,
   inject: [RABBITMQ_CONNECTION],
-  useFactory: async (connection: amqp.Connection) => {
+  useFactory: async (connection: any) => {
     const channel = await connection.createChannel();
     await channel.assertExchange('ecommerce.events', 'topic', { durable: true });
     return channel;
