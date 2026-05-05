@@ -12,6 +12,8 @@ class CatalogUpdate(BaseModel):
 
 class CatalogResponse(CatalogBase):
     id: int
+    brand: str
+    location: str
 
     class Config:
         from_attributes = True
