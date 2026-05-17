@@ -1,156 +1,127 @@
-import React, { useState, useEffect } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
+import React, { useEffect, useState } from 'react';
+import { useNavigate, useParams } from 'react-router-dom';
+import { addProductToCart, formatVnd, getOrCreateCart } from '../../utils/orderingApi';
 
-// Dữ liệu bộ lọc giá đã được chuyển thành min-max input
+const CATALOG_BASE_URL = process.env.REACT_APP_CATALOG_URL || 'http://127.0.0.1:8000';
 
-/**
- * Parse chuỗi dạng "{'Asus', 'Dell', 'HP'}" hoặc "Asus,Dell,HP" thành mảng.
- * Xử lý cả trường hợp chuỗi rỗng.
- */
-const parseSetString = (str) => {
-  if (!str || str.trim() === '' || str.trim() === '{}') return [];
-  // Nếu chứa dấu { } → dạng set của MariaDB
-  if (str.includes('{')) {
-    return str
-      .replace(/[{}]/g, '')
-      .split(',')
-      .map(s => s.trim().replace(/'/g, ''))
-      .filter(Boolean);
-  }
-  // Fallback: tách theo dấu phẩy
-  return str.split(',').map(s => s.trim()).filter(Boolean);
-};
+const AVAILABLE_BRANDS = ['Asus', 'Dell', 'HP', 'Lenovo', 'Apple', 'Acer', 'MSI'];
+const AVAILABLE_LOCATIONS = ['Ha Noi', 'TP. Ho Chi Minh', 'Da Nang'];
+const PRICE_RANGES = [
+  { label: 'Tat ca muc gia', value: '' },
+  { label: 'Duoi 10 trieu', value: '0-10000000' },
+  { label: '10 - 20 trieu', value: '10000000-20000000' },
+  { label: '20 - 30 trieu', value: '20000000-30000000' },
+  { label: 'Tren 30 trieu', value: '30000000-999999999' },
+];
 
 const CatalogProductList = () => {
   const { catalogId } = useParams();
   const navigate = useNavigate();
-
-  // --- Data States ---
   const [catalog, setCatalog] = useState(null);
-  const [allProducts, setAllProducts] = useState([]); // Chứa TẤT CẢ sản phẩm gốc từ API
-  const [filteredProducts, setFilteredProducts] = useState([]); // Chứa sản phẩm SAU KHI LỌC
+  const [allProducts, setAllProducts] = useState([]);
+  const [filteredProducts, setFilteredProducts] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [brands, setBrands] = useState([]);
-  const [locations, setLocations] = useState([]);
-
-  // --- Pagination States ---
   const [page, setPage] = useState(1);
   const limit = 8;
-
-  // --- Filter States ---
   const [selectedBrands, setSelectedBrands] = useState([]);
-  const [minPrice, setMinPrice] = useState('');
-  const [maxPrice, setMaxPrice] = useState('');
+  const [selectedPrice, setSelectedPrice] = useState('');
   const [selectedLocations, setSelectedLocations] = useState([]);
+  const [statusMessage, setStatusMessage] = useState('');
+  const [isCartBusy, setIsCartBusy] = useState(false);
 
-  // Fetch dữ liệu khi vào trang
   useEffect(() => {
     fetchCatalogInfo();
     fetchAllProducts();
   }, [catalogId]);
 
-  // Các hàm helper lấy thông tin từ product
-  const getProductBrand = (product) => {
-    try {
-      if (product.detailDesc && product.detailDesc.factory) return product.detailDesc.factory;
-      if (typeof product.detailDesc === 'string') {
-        const parsed = JSON.parse(product.detailDesc);
-        if (parsed.factory) return parsed.factory;
-      }
-    } catch (e) {}
-    return product.brand || '';
-  };
-
-  const getProductLocation = (product) => {
-    if (product.shop && product.shop.address) return product.shop.address;
-    return product.location || '';
-  };
-
-  // LOGIC LỌC FRONTEND: Chạy lại mỗi khi allProducts hoặc các tiêu chí lọc thay đổi
   useEffect(() => {
     let result = [...allProducts];
 
-    // Lọc theo Thương hiệu
     if (selectedBrands.length > 0) {
-      result = result.filter(product => selectedBrands.includes(getProductBrand(product)));
+      result = result.filter((product) => selectedBrands.includes(product.brand));
     }
 
-    // Lọc theo Nơi bán
     if (selectedLocations.length > 0) {
-      result = result.filter(product => selectedLocations.includes(getProductLocation(product)));
+      result = result.filter((product) => selectedLocations.includes(product.location));
     }
 
-    // Lọc theo Giá
-    if (minPrice !== '' || maxPrice !== '') {
-      const min = minPrice ? parseInt(minPrice, 10) : 0;
-      const max = maxPrice ? parseInt(maxPrice, 10) : Infinity;
-      result = result.filter(product => product.price >= min && product.price <= max);
+    if (selectedPrice) {
+      const [minStr, maxStr] = selectedPrice.split('-');
+      const min = parseInt(minStr, 10);
+      const max = parseInt(maxStr, 10);
+      result = result.filter((product) => product.price >= min && product.price <= max);
     }
 
     setFilteredProducts(result);
-    setPage(1); // Reset về trang 1 mỗi khi đổi bộ lọc
-  }, [allProducts, selectedBrands, selectedLocations, minPrice, maxPrice]);
+    setPage(1);
+  }, [allProducts, selectedBrands, selectedLocations, selectedPrice]);
 
   const fetchCatalogInfo = async () => {
     try {
-      const response = await fetch(`http://127.0.0.1:8000/api/v1/catalogs/${catalogId}`);
+      const response = await fetch(`${CATALOG_BASE_URL}/api/v1/catalogs/${catalogId}`);
       if (response.ok) {
         const data = await response.json();
         setCatalog(data);
-        console.log('Catalog API response:', data);
-        setBrands(parseSetString(data.brand));
-        setLocations(parseSetString(data.location));
       }
-    } catch (error) {
-      console.error("Lỗi khi tải thông tin danh mục:", error);
+    } catch (_error) {
+      setStatusMessage('Khong the tai thong tin danh muc.');
     }
   };
 
   const fetchAllProducts = async () => {
     try {
       setLoading(true);
-      // Thay đổi: Xóa skip/limit để lấy toàn bộ dữ liệu (hoặc đặt limit rất lớn nếu Backend bắt buộc)
-      const response = await fetch(`http://127.0.0.1:8000/api/v1/catalogs/${catalogId}/products`);
-      if (!response.ok) throw new Error("Network response was not ok");
+      const response = await fetch(`${CATALOG_BASE_URL}/api/v1/catalogs/${catalogId}/products`);
+      if (!response.ok) throw new Error('Network response was not ok');
       const data = await response.json();
 
       setAllProducts(data);
-      setFilteredProducts(data); // Ban đầu danh sách lọc = toàn bộ danh sách
-    } catch (error) {
-      console.error("Lỗi khi tải sản phẩm:", error);
+      setFilteredProducts(data);
+    } catch (_error) {
+      setStatusMessage('Khong the tai san pham.');
     } finally {
       setLoading(false);
     }
   };
 
-  // --- Handlers cho bộ lọc ---
   const handleBrandChange = (brand) => {
-    setSelectedBrands(prev =>
-      prev.includes(brand) ? prev.filter(b => b !== brand) : [...prev, brand]
+    setSelectedBrands((prev) =>
+      prev.includes(brand) ? prev.filter((item) => item !== brand) : [...prev, brand],
     );
   };
 
   const handleLocationChange = (location) => {
-    setSelectedLocations(prev =>
-      prev.includes(location) ? prev.filter(l => l !== location) : [...prev, location]
+    setSelectedLocations((prev) =>
+      prev.includes(location) ? prev.filter((item) => item !== location) : [...prev, location],
     );
   };
 
   const clearFilters = () => {
     setSelectedBrands([]);
-    setMinPrice('');
-    setMaxPrice('');
+    setSelectedPrice('');
     setSelectedLocations([]);
   };
 
-  // --- Tính toán phân trang phía Frontend ---
+  const handleAddToCart = async (event, product) => {
+    event.stopPropagation();
+    setIsCartBusy(true);
+    try {
+      const cart = await getOrCreateCart();
+      await addProductToCart(cart.id, product, 1);
+      setStatusMessage(`Da them ${product.name} vao gio hang`);
+    } catch (error) {
+      setStatusMessage(error.message);
+    } finally {
+      setIsCartBusy(false);
+    }
+  };
+
   const totalPages = Math.ceil(filteredProducts.length / limit);
   const startIndex = (page - 1) * limit;
   const currentDisplayedProducts = filteredProducts.slice(startIndex, startIndex + limit);
 
   return (
     <>
-      {/* Giữ nguyên phần CSS từ code cũ */}
       <style>{`
         .page-container { max-width: 1200px; margin: 0 auto; padding: 40px 20px; font-family: 'Segoe UI', Tahoma, sans-serif; }
         .list-header { display: flex; align-items: center; gap: 20px; margin-bottom: 30px; }
@@ -176,11 +147,12 @@ const CatalogProductList = () => {
         .product-card:hover .product-overlay { opacity: 1; }
         .btn-detail { padding: 10px 20px; background: white; border: none; border-radius: 4px; font-weight: bold; cursor: pointer; color: #111827; }
         .product-info { padding: 20px; display: flex; flex-direction: column; flex-grow: 1; }
-        .product-brand { font-size: 12px; font-weight: bold; color: #6b7280; text-transform: uppercase; margin-bottom: 4px;}
+        .product-brand { font-size: 12px; font-weight: bold; color: #6b7280; text-transform: uppercase; margin-bottom: 4px; }
         .product-info h3 { font-size: 16px; margin: 0 0 10px 0; color: #111827; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; text-overflow: ellipsis; line-height: 1.4; height: 44px; }
         .price { color: #4f46e5; font-weight: bold; margin-bottom: 15px; font-size: 18px; }
         .btn-add-cart { margin-top: auto; padding: 10px; background-color: #eef2ff; color: #4f46e5; border: 1px solid #e0e7ff; border-radius: 6px; cursor: pointer; font-weight: 600; transition: all 0.3s; width: 100%; }
         .btn-add-cart:hover { background-color: #4f46e5; color: white; }
+        .btn-add-cart:disabled { opacity: 0.6; cursor: not-allowed; }
         .pagination { display: flex; justify-content: center; gap: 10px; margin-top: 40px; }
         .page-btn { padding: 8px 16px; border: 1px solid #d1d5db; background: white; border-radius: 6px; cursor: pointer; font-weight: 500; transition: all 0.2s; }
         .page-btn:hover:not(:disabled) { border-color: #4f46e5; color: #4f46e5; }
@@ -188,112 +160,104 @@ const CatalogProductList = () => {
         .loading { text-align: center; padding: 40px; font-size: 18px; color: #6b7280; width: 100%; }
         .empty-state { text-align: center; padding: 40px; color: #6b7280; font-size: 16px; background: white; border-radius: 12px; border: 1px dashed #d1d5db; }
         .filter-stats { margin-bottom: 15px; font-size: 14px; color: #6b7280; }
+        .status-message { margin: 0 0 20px; padding: 10px 14px; border-radius: 8px; background-color: #ecfeff; color: #0f766e; border: 1px solid #99f6e4; }
         @media (max-width: 768px) { .layout-wrapper { flex-direction: column; } .sidebar { width: 100%; } }
       `}</style>
 
       <div className="page-container">
         <div className="list-header">
-          <button className="back-btn" onClick={() => navigate(-1)} title="Quay lại">
+          <button className="back-btn" onClick={() => navigate(-1)} title="Quay lai">
             &larr;
           </button>
-          <h2>{catalog ? catalog.product_type : 'Danh mục sản phẩm'}</h2>
+          <h2>{catalog ? catalog.product_type : 'Danh muc san pham'}</h2>
         </div>
 
+        {statusMessage ? <div className="status-message">{statusMessage}</div> : null}
+
         <div className="layout-wrapper">
-          {/* CỘT TRÁI: SIDEBAR LỌC */}
           <aside className="sidebar">
             <div className="filter-section">
-              <h4>Mức giá</h4>
-              <div style={{ display: 'flex', gap: '10px', alignItems: 'center', marginBottom: '10px' }}>
-                <input
-                  type="number"
-                  placeholder="Từ"
-                  value={minPrice}
-                  onChange={(e) => setMinPrice(e.target.value)}
-                  style={{ width: '100%', padding: '8px', border: '1px solid #d1d5db', borderRadius: '6px', fontSize: '14px' }}
-                  min="0"
-                />
-                <span style={{ color: '#4b5563' }}>-</span>
-                <input
-                  type="number"
-                  placeholder="Đến"
-                  value={maxPrice}
-                  onChange={(e) => setMaxPrice(e.target.value)}
-                  style={{ width: '100%', padding: '8px', border: '1px solid #d1d5db', borderRadius: '6px', fontSize: '14px' }}
-                  min="0"
-                />
-              </div>
+              <h4>Muc gia</h4>
+              {PRICE_RANGES.map((range) => (
+                <label key={range.value} className="filter-item">
+                  <input
+                    type="radio"
+                    name="price"
+                    value={range.value}
+                    checked={selectedPrice === range.value}
+                    onChange={(event) => setSelectedPrice(event.target.value)}
+                  />
+                  {range.label}
+                </label>
+              ))}
             </div>
 
-            {brands.length > 0 && (
-              <div className="filter-section">
-                <h4>Thương hiệu</h4>
-                {brands.map((brand) => (
-                  <label key={brand} className="filter-item">
-                    <input
-                      type="checkbox"
-                      checked={selectedBrands.includes(brand)}
-                      onChange={() => handleBrandChange(brand)}
-                    />
-                    {brand}
-                  </label>
-                ))}
-              </div>
-            )}
+            <div className="filter-section">
+              <h4>Thuong hieu</h4>
+              {AVAILABLE_BRANDS.map((brand) => (
+                <label key={brand} className="filter-item">
+                  <input
+                    type="checkbox"
+                    checked={selectedBrands.includes(brand)}
+                    onChange={() => handleBrandChange(brand)}
+                  />
+                  {brand}
+                </label>
+              ))}
+            </div>
 
-            {locations.length > 0 && (
-              <div className="filter-section">
-                <h4>Nơi bán</h4>
-                {locations.map((loc) => (
-                  <label key={loc} className="filter-item">
-                    <input
-                      type="checkbox"
-                      checked={selectedLocations.includes(loc)}
-                      onChange={() => handleLocationChange(loc)}
-                    />
-                    {loc}
-                  </label>
-                ))}
-              </div>
-            )}
+            <div className="filter-section">
+              <h4>Noi ban</h4>
+              {AVAILABLE_LOCATIONS.map((loc) => (
+                <label key={loc} className="filter-item">
+                  <input
+                    type="checkbox"
+                    checked={selectedLocations.includes(loc)}
+                    onChange={() => handleLocationChange(loc)}
+                  />
+                  {loc}
+                </label>
+              ))}
+            </div>
 
-            {(selectedBrands.length > 0 || minPrice !== '' || maxPrice !== '' || selectedLocations.length > 0) && (
+            {(selectedBrands.length > 0 || selectedPrice || selectedLocations.length > 0) && (
               <button className="btn-clear" onClick={clearFilters}>
-                Xóa tất cả bộ lọc
+                Xoa tat ca bo loc
               </button>
             )}
           </aside>
 
-          {/* CỘT PHẢI: DANH SÁCH SẢN PHẨM */}
           <main className="main-content">
             {loading ? (
-              <div className="loading">Đang tải toàn bộ sản phẩm...</div>
+              <div className="loading">Dang tai toan bo san pham...</div>
             ) : (
               <>
                 <div className="filter-stats">
-                  Hiển thị <strong>{currentDisplayedProducts.length}</strong> trên tổng số <strong>{filteredProducts.length}</strong> sản phẩm phù hợp.
+                  Hien thi <strong>{currentDisplayedProducts.length}</strong> tren tong so{' '}
+                  <strong>{filteredProducts.length}</strong> san pham phu hop.
                 </div>
 
                 {filteredProducts.length === 0 ? (
                   <div className="empty-state">
-                    Không tìm thấy sản phẩm nào phù hợp với tiêu chí lọc của bạn.
+                    Khong tim thay san pham nao phu hop voi tieu chi loc cua ban.
                     <br /><br />
                     <button className="btn-clear" style={{ width: 'auto', padding: '10px 20px' }} onClick={clearFilters}>
-                      Xóa bộ lọc để xem lại
+                      Xoa bo loc de xem lai
                     </button>
                   </div>
                 ) : (
                   <div className="product-grid">
-                    {/* Render currentDisplayedProducts thay vì products */}
                     {currentDisplayedProducts.map((product) => {
-                      let imageSrc = "https://via.placeholder.com/250?text=No+Image";
+                      let imageSrc = 'https://via.placeholder.com/250?text=No+Image';
                       if (product.images && product.images.length > 0) {
                         let firstImage = typeof product.images === 'string' ? null : product.images[0];
                         if (typeof product.images === 'string') {
                           try {
                             const parsed = JSON.parse(product.images);
                             if (Array.isArray(parsed) && parsed.length > 0) firstImage = parsed[0];
-                          } catch (e) { }
+                          } catch (_error) {
+                            // ignore invalid JSON
+                          }
                         }
                         if (firstImage) imageSrc = firstImage;
                       }
@@ -307,18 +271,19 @@ const CatalogProductList = () => {
                           <div className="product-image">
                             <img src={imageSrc} alt={product.name} />
                             <div className="product-overlay">
-                              <button className="btn-detail">Xem chi tiết</button>
+                              <button className="btn-detail">Xem chi tiet</button>
                             </div>
                           </div>
                           <div className="product-info">
-                            {getProductBrand(product) && <div className="product-brand">{getProductBrand(product)}</div>}
+                            {product.brand && <div className="product-brand">{product.brand}</div>}
                             <h3>{product.name}</h3>
-                            <p className="price">{product.price.toLocaleString('vi-VN')}đ</p>
+                            <p className="price">{formatVnd(Number(product.price))}</p>
                             <button
                               className="btn-add-cart"
-                              onClick={(e) => { e.stopPropagation(); alert('Đã thêm thành công'); }}
+                              onClick={(event) => handleAddToCart(event, product)}
+                              disabled={isCartBusy}
                             >
-                              Thêm vào giỏ
+                              {isCartBusy ? 'Dang xu ly...' : 'Them vao gio'}
                             </button>
                           </div>
                         </div>
@@ -327,7 +292,6 @@ const CatalogProductList = () => {
                   </div>
                 )}
 
-                {/* Logic Pagination Frontend */}
                 {totalPages > 1 && (
                   <div className="pagination">
                     <button
@@ -335,7 +299,7 @@ const CatalogProductList = () => {
                       disabled={page === 1}
                       onClick={() => setPage(page - 1)}
                     >
-                      Trang trước
+                      Trang truoc
                     </button>
                     <span style={{ padding: '8px 16px', fontWeight: 'bold' }}>
                       Trang {page} / {totalPages}

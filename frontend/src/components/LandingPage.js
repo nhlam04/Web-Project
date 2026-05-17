@@ -1,190 +1,301 @@
-import React from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import CatalogList from './catalog/CatalogList';
+import { addProductToCart, formatVnd, getOrCreateCart } from '../utils/orderingApi';
 
+// Dữ liệu mẫu cho sản phẩm
 const featuredProducts = [
-  { id: 1, name: "Tai nghe Chống ồn Pro", price: "2.490.000đ", image: "https://images.unsplash.com/photo-1505740420928-5e560c06d30e?w=500&q=80" },
-  { id: 2, name: "Đồng hồ Thể thao", price: "3.150.000đ", image: "https://images.unsplash.com/photo-1523275335684-37898b6baf30?w=500&q=80" },
-  { id: 3, name: "Kính mát Thời trang", price: "850.000đ", image: "https://images.unsplash.com/photo-1572635196237-14b3f281501f?w=500&q=80" },
-  { id: 4, name: "Loa Bluetooth Mini", price: "1.200.000đ", image: "https://images.unsplash.com/photo-1608043152269-423dbba4e7e1?w=500&q=80" },
+  { id: 1, sellerId: 'seller-001', name: 'Tai nghe Chống ồn Pro', unitPrice: 2490000, image: 'https://images.unsplash.com/photo-1505740420928-5e560c06d30e?w=500&q=80' },
+  { id: 2, sellerId: 'seller-002', name: 'Đồng hồ Thể thao', unitPrice: 3150000, image: 'https://images.unsplash.com/photo-1523275335684-37898b6baf30?w=500&q=80' },
+  { id: 3, sellerId: 'seller-003', name: 'Kính mát Thời trang', unitPrice: 850000, image: 'https://images.unsplash.com/photo-1572635196237-14b3f281501f?w=500&q=80' },
+  { id: 4, sellerId: 'seller-001', name: 'Loa Bluetooth Mini', unitPrice: 1200000, image: 'https://images.unsplash.com/photo-1608043152269-423dbba4e7e1?w=500&q=80' },
 ];
 
-const LandingPage = () => {
-  return (
-    <div className="font-sans bg-gray-50 text-gray-900 min-h-screen">
-      {/* Header */}
-      <header className="sticky top-0 z-50 bg-white/80 backdrop-blur-md shadow-sm border-b border-gray-100">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 flex justify-between items-center">
-          <div className="text-2xl font-black bg-clip-text text-transparent bg-gradient-to-r from-indigo-600 to-violet-600">
-            Dự án Nhóm 16
-          </div>
-          <nav className="hidden md:flex space-x-8">
-            <a href="#home" className="font-medium text-gray-600 hover:text-indigo-600 transition-colors duration-300">Trang chủ</a>
-            <a href="#products" className="font-medium text-gray-600 hover:text-indigo-600 transition-colors duration-300">Sản phẩm</a>
-            <a href="#about" className="font-medium text-gray-600 hover:text-indigo-600 transition-colors duration-300">Về chúng tôi</a>
-          </nav>
-          <div>
-            <button className="relative p-2 text-gray-600 hover:text-indigo-600 transition-colors duration-300 group">
-              <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6 transform group-hover:scale-110 transition-transform" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z" />
-              </svg>
-              <span className="absolute top-0 right-0 inline-flex items-center justify-center px-2 py-1 text-xs font-bold leading-none text-white transform translate-x-1/4 -translate-y-1/4 bg-red-500 rounded-full">3</span>
-            </button>
-          </div>
-        </div>
-      </header>
 
-      {/* Hero Section */}
-      <section id="home" className="relative bg-gradient-to-br from-indigo-50 via-white to-violet-50 overflow-hidden">
-        <div className="absolute top-0 left-1/2 w-full -translate-x-1/2 h-full bg-[radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))] from-indigo-200/40 via-transparent to-transparent pointer-events-none"></div>
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-24 lg:py-32 flex flex-col lg:flex-row items-center justify-between gap-12 relative z-10">
-          <div className="flex-1 text-center lg:text-left">
-            <h1 className="text-5xl lg:text-6xl font-extrabold tracking-tight text-gray-900 mb-6 leading-tight">
-              Định hình phong cách <br />
-              <span className="text-transparent bg-clip-text bg-gradient-to-r from-indigo-600 to-violet-600">của riêng bạn</span>
-            </h1>
-            <p className="text-lg lg:text-xl text-gray-600 mb-10 max-w-2xl mx-auto lg:mx-0">
-              Khám phá bộ sưu tập mới nhất với hàng ngàn ưu đãi hấp dẫn. Miễn phí vận chuyển cho đơn hàng từ 500k. Nâng tầm cuộc sống với những sản phẩm công nghệ tinh tế.
-            </p>
-            <div className="flex flex-col sm:flex-row gap-4 justify-center lg:justify-start">
-              <button className="px-8 py-4 bg-indigo-600 hover:bg-indigo-700 text-white rounded-full font-semibold shadow-lg shadow-indigo-200 transform hover:-translate-y-1 transition-all duration-300">
-                Mua ngay hôm nay
-              </button>
-              <button className="px-8 py-4 bg-white hover:bg-gray-50 text-indigo-600 border border-indigo-100 rounded-full font-semibold shadow-sm hover:shadow-md transform hover:-translate-y-1 transition-all duration-300">
-                Xem khuyến mãi
+const LandingPage = () => {
+  const [cart, setCart] = useState(null);
+  const [isCartOpen, setIsCartOpen] = useState(false);
+  const [isCartBusy, setIsCartBusy] = useState(false);
+  const [statusMessage, setStatusMessage] = useState('');
+  const cartCount = useMemo(() => {
+    if (!cart?.totals?.totalQuantity) {
+      return 0;
+    }
+    return cart.totals.totalQuantity;
+  }, [cart]);
+
+  useEffect(() => {
+    let active = true;
+
+    async function syncCart() {
+      try {
+        const currentCart = await getOrCreateCart();
+        if (active) {
+          setCart(currentCart);
+        }
+      } catch (error) {
+        if (active) {
+          setStatusMessage('Không thể tải giỏ hàng. Vui lòng kiểm tra Ordering Service.');
+        }
+      }
+    }
+
+    syncCart();
+
+    return () => {
+      active = false;
+    };
+  }, []);
+
+  async function handleOpenCart() {
+    setIsCartOpen(true);
+    setIsCartBusy(true);
+    try {
+      const currentCart = await getOrCreateCart();
+      setCart(currentCart);
+      setStatusMessage('');
+    } catch (error) {
+      setStatusMessage(error.message);
+    } finally {
+      setIsCartBusy(false);
+    }
+  }
+
+  async function handleAddToCart(product) {
+    setIsCartBusy(true);
+    try {
+      const currentCart = cart || (await getOrCreateCart());
+      const nextCart = await addProductToCart(currentCart.id, product);
+      setCart(nextCart);
+      setStatusMessage(`Đã thêm ${product.name} vào giỏ hàng`);
+    } catch (error) {
+      setStatusMessage(error.message);
+    } finally {
+      setIsCartBusy(false);
+    }
+  }
+
+  return (
+    <>
+      {/* CHÈN CSS TRỰC TIẾP VÀO COMPONENT */}
+      <style>{`
+        /* Tổng quan */
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: #f9fafb; color: #333; }
+        a { text-decoration: none; color: inherit; }
+
+        /* Header */
+        .header { background-color: white; box-shadow: 0 2px 4px rgba(0,0,0,0.05); position: sticky; top: 0; z-index: 100; }
+        .header-content { max-width: 1200px; margin: 0 auto; padding: 15px 20px; display: flex; justify-content: space-between; align-items: center; }
+        .logo { font-size: 24px; font-weight: 900; color: #4f46e5; }
+        .nav-links { display: flex; gap: 30px; }
+        .nav-links a { font-weight: 500; color: #4b5563; transition: color 0.3s; }
+        .nav-links a:hover { color: #4f46e5; }
+        .cart-btn { background: none; border: none; font-size: 20px; cursor: pointer; position: relative; }
+        .cart-badge { position: absolute; top: -8px; right: -10px; background-color: #ef4444; color: white; font-size: 12px; font-weight: bold; padding: 2px 6px; border-radius: 50%; }
+        .status-message { max-width: 1200px; margin: 14px auto 0; padding: 10px 14px; border-radius: 8px; background-color: #ecfeff; color: #0f766e; border: 1px solid #99f6e4; }
+
+        /* Hero Section */
+        .hero { background-color: #eef2ff; padding: 60px 20px; }
+        .hero-content { max-width: 1200px; margin: 0 auto; display: flex; align-items: center; justify-content: space-between; gap: 40px; }
+        .hero-text { flex: 1; }
+        .hero-text h1 { font-size: 48px; line-height: 1.2; margin-bottom: 20px; color: #111827; }
+        .highlight { color: #4f46e5; }
+        .hero-text p { font-size: 18px; color: #4b5563; margin-bottom: 30px; line-height: 1.6; }
+        .hero-buttons { display: flex; gap: 15px; }
+        .btn { padding: 12px 24px; font-size: 16px; font-weight: 600; border-radius: 6px; cursor: pointer; border: none; transition: all 0.3s; }
+        .btn-primary { background-color: #4f46e5; color: white; }
+        .btn-primary:hover { background-color: #4338ca; }
+        .btn-secondary { background-color: white; color: #4f46e5; border: 1px solid #c7d2fe; }
+        .btn-secondary:hover { background-color: #e0e7ff; }
+        .hero-image { flex: 1; display: flex; justify-content: center; }
+        .hero-image img { width: 100%; max-width: 400px; height: 400px; object-fit: cover; border-radius: 16px; box-shadow: 0 20px 25px -5px rgba(0,0,0,0.1); }
+
+        /* Products Section */
+        .products-section { max-width: 1200px; margin: 0 auto; padding: 80px 20px; }
+        .products-header { text-align: center; margin-bottom: 50px; }
+        .products-header h2 { font-size: 32px; color: #111827; margin-bottom: 10px; }
+        .products-header p { color: #6b7280; }
+        .product-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 30px; }
+        .product-card { background: white; border-radius: 12px; border: 1px solid #f3f4f6; overflow: hidden; transition: box-shadow 0.3s; display: flex; flex-direction: column; }
+        .product-card:hover { box-shadow: 0 10px 15px -3px rgba(0,0,0,0.1); }
+        .product-image { height: 250px; position: relative; overflow: hidden; }
+        .product-image img { width: 100%; height: 100%; object-fit: cover; transition: transform 0.5s; }
+        .product-card:hover .product-image img { transform: scale(1.05); }
+        .product-overlay { position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.2); display: flex; align-items: center; justify-content: center; opacity: 0; transition: opacity 0.3s; }
+        .product-card:hover .product-overlay { opacity: 1; }
+        .btn-detail { padding: 10px 20px; background: white; border: none; border-radius: 4px; font-weight: bold; cursor: pointer; }
+        .product-info { padding: 20px; display: flex; flex-direction: column; flex-grow: 1; }
+        .product-info h3 { font-size: 18px; margin-bottom: 5px; }
+        .price { color: #4f46e5; font-weight: bold; margin-bottom: 15px; }
+        .btn-add-cart { margin-top: auto; padding: 10px; background-color: #eef2ff; color: #4f46e5; border: 1px solid #e0e7ff; border-radius: 6px; cursor: pointer; font-weight: 600; transition: all 0.3s; }
+        .btn-add-cart:hover { background-color: #4f46e5; color: white; }
+
+        /* Footer */
+        .footer { background-color: #111827; color: #d1d5db; padding: 60px 20px 20px; }
+        .footer-content { max-width: 1200px; margin: 0 auto; display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 40px; margin-bottom: 40px; }
+        .footer-col h2 { color: white; margin-bottom: 15px; }
+        .footer-col h3 { color: white; margin-bottom: 15px; font-size: 18px; }
+        .footer-col p { line-height: 1.6; margin-bottom: 15px; }
+        .footer-col ul { list-style: none; }
+        .footer-col ul li { margin-bottom: 10px; }
+        .footer-col ul li a:hover { color: white; }
+        .newsletter { display: flex; }
+        .newsletter input { padding: 10px; border: none; border-radius: 4px 0 0 4px; outline: none; flex: 1; }
+        .newsletter button { padding: 10px 20px; background-color: #4f46e5; color: white; border: none; border-radius: 0 4px 4px 0; cursor: pointer; }
+        .newsletter button:hover { background-color: #4338ca; }
+        .footer-bottom { text-align: center; padding-top: 20px; border-top: 1px solid #374151; font-size: 14px; }
+
+        /* Cart drawer */
+        .cart-overlay { position: fixed; inset: 0; background: rgba(17, 24, 39, 0.45); z-index: 120; display: flex; justify-content: flex-end; }
+        .cart-panel { width: min(100%, 420px); background: #ffffff; height: 100%; display: flex; flex-direction: column; box-shadow: -10px 0 30px rgba(0, 0, 0, 0.12); }
+        .cart-panel-header { display: flex; align-items: center; justify-content: space-between; padding: 16px 18px; border-bottom: 1px solid #e5e7eb; }
+        .cart-panel-header h3 { font-size: 20px; color: #111827; }
+        .close-btn { border: 0; background: #f3f4f6; width: 32px; height: 32px; border-radius: 8px; cursor: pointer; }
+        .cart-panel-body { padding: 16px 18px; overflow: auto; flex: 1; }
+        .cart-item { padding: 10px 0; border-bottom: 1px dashed #e5e7eb; }
+        .cart-item-row { display: flex; justify-content: space-between; gap: 12px; }
+        .cart-item-name { font-weight: 600; color: #1f2937; }
+        .cart-item-meta { font-size: 13px; color: #6b7280; margin-top: 4px; }
+        .cart-total { margin-top: 14px; padding: 12px; border-radius: 8px; background: #eef2ff; color: #1f2937; font-weight: 700; }
+        .cart-empty { color: #6b7280; }
+
+        /* Responsive */
+        @media (max-width: 768px) {
+          .hero-content { flex-direction: column; text-align: center; }
+          .nav-links { display: none; }
+          .hero-buttons { justify-content: center; }
+        }
+      `}</style>
+
+      <div className="app-container">
+        {/* Header */}
+        <header className="header">
+          <div className="header-content">
+            <div className="logo">Project Web nhóm 16</div>
+            <nav className="nav-links">
+              <a href="#home">Trang chủ</a>
+              <a href="#products">Sản phẩm</a>
+              <a href="#about">Về chúng tôi</a>
+            </nav>
+            <div className="header-actions">
+              <button className="cart-btn" onClick={handleOpenCart}>
+                🛒 <span className="cart-badge">{cartCount}</span>
               </button>
             </div>
           </div>
-          <div className="flex-1 w-full flex justify-center relative">
-            <div className="absolute inset-0 bg-gradient-to-tr from-indigo-200 to-violet-200 rounded-[3rem] transform rotate-3 scale-105 opacity-50 blur-xl"></div>
-            <img
-              src="https://images.unsplash.com/photo-1483985988355-763728e1935b?w=800&q=80"
-              alt="Fashion Hero"
-              className="relative w-full max-w-md h-[500px] object-cover rounded-[2rem] shadow-2xl border-4 border-white transform hover:scale-[1.02] transition-transform duration-500"
-            />
-          </div>
-        </div>
-      </section>
+        </header>
 
-      <div className="bg-white">
+        {statusMessage ? <div className="status-message">{statusMessage}</div> : null}
+
+        {/* Hero Section */}
+        <section id="home" className="hero">
+          <div className="hero-content">
+            <div className="hero-text">
+              <h1>Định hình phong cách <br /> <span className="highlight">của riêng bạn</span></h1>
+              <p>Khám phá bộ sưu tập mới nhất với hàng ngàn ưu đãi hấp dẫn. Miễn phí vận chuyển cho đơn hàng từ 500k.</p>
+              <div className="hero-buttons">
+                <button className="btn btn-primary">Mua ngay</button>
+                <button className="btn btn-secondary">Xem khuyến mãi</button>
+              </div>
+            </div>
+            <div className="hero-image">
+              <img src="https://images.unsplash.com/photo-1483985988355-763728e1935b?w=600&q=80" alt="Fashion Hero" />
+            </div>
+          </div>
+        </section>
+
         <CatalogList />
-      </div>
 
-      {/* Products Section */}
-      <section id="products" className="py-24 bg-gray-50">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="text-center mb-16">
-            <h2 className="text-3xl md:text-4xl font-bold text-gray-900 mb-4 relative inline-block">
-              Sản Phẩm Nổi Bật
-              <div className="absolute -bottom-2 left-1/4 right-1/4 h-1 bg-gradient-to-r from-indigo-600 to-violet-600 rounded-full"></div>
-            </h2>
-            <p className="text-gray-500 max-w-2xl mx-auto mt-4">Những mặt hàng được yêu thích nhất trong tuần qua. Chọn ngay món đồ phù hợp với phong cách của bạn.</p>
+        {/* Featured Products */}
+        <section id="products" className="products-section">
+          <div className="products-header">
+            <h2>Sản Phẩm Nổi Bật</h2>
+            <p>Những mặt hàng được yêu thích nhất trong tuần qua.</p>
           </div>
-
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8">
+          <div className="product-grid">
             {featuredProducts.map((product) => (
-              <div key={product.id} className="group bg-white rounded-2xl border border-gray-100 overflow-hidden hover:shadow-2xl hover:shadow-indigo-100/50 transition-all duration-300 flex flex-col">
-                <div className="relative h-64 overflow-hidden bg-gray-100">
-                  <img
-                    src={product.image}
-                    alt={product.name}
-                    className="w-full h-full object-cover transform group-hover:scale-110 transition-transform duration-700 ease-in-out"
-                  />
-                  <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex items-center justify-center backdrop-blur-[2px]">
-                    <button className="px-6 py-2 bg-white/90 hover:bg-white text-gray-900 font-semibold rounded-full transform translate-y-4 group-hover:translate-y-0 transition-all duration-300 shadow-lg">
-                      Xem chi tiết
-                    </button>
-                  </div>
-                  <div className="absolute top-4 right-4 bg-white p-2 rounded-full shadow-md text-gray-400 hover:text-red-500 transition-colors cursor-pointer">
-                    <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z" />
-                    </svg>
+              <div key={product.id} className="product-card">
+                <div className="product-image">
+                  <img src={product.image} alt={product.name} />
+                  <div className="product-overlay">
+                    <button className="btn-detail">Xem chi tiết</button>
                   </div>
                 </div>
-                <div className="p-6 flex flex-col flex-grow">
-                  <h3 className="text-lg font-bold text-gray-800 mb-2 line-clamp-1">{product.name}</h3>
-                  <div className="text-xl font-extrabold text-indigo-600 mb-6">{product.price}</div>
-                  <button className="mt-auto w-full py-3 bg-indigo-50 hover:bg-indigo-600 text-indigo-700 hover:text-white rounded-xl font-semibold transition-colors duration-300 flex items-center justify-center gap-2">
-                    <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z" />
-                    </svg>
-                    Thêm vào giỏ
+                <div className="product-info">
+                  <h3>{product.name}</h3>
+                  <p className="price">{formatVnd(product.unitPrice)}</p>
+                  <button className="btn-add-cart" onClick={() => handleAddToCart(product)} disabled={isCartBusy}>
+                    {isCartBusy ? 'Đang xử lý...' : 'Thêm vào giỏ'}
                   </button>
                 </div>
               </div>
             ))}
           </div>
-        </div>
-      </section>
+        </section>
 
-      {/* Footer */}
-      <footer id="about" className="bg-gray-900 text-gray-300 pt-20 pb-10">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-12 mb-16">
-            <div className="col-span-1 lg:col-span-1">
-              <h2 className="text-2xl font-bold text-white mb-6">Dự án Nhóm 16</h2>
-              <p className="text-gray-400 leading-relaxed mb-6">Mang đến cho bạn những sản phẩm chất lượng nhất với dịch vụ chăm sóc khách hàng tận tâm. Mua sắm dễ dàng, an toàn và nhanh chóng.</p>
-              <div className="flex space-x-4">
-                {/* Social Icons Placeholder */}
-                <div className="w-10 h-10 rounded-full bg-gray-800 flex items-center justify-center hover:bg-indigo-600 transition-colors cursor-pointer">
-                  <span className="text-white">FB</span>
-                </div>
-                <div className="w-10 h-10 rounded-full bg-gray-800 flex items-center justify-center hover:bg-indigo-600 transition-colors cursor-pointer">
-                  <span className="text-white">IG</span>
-                </div>
+        {isCartOpen ? (
+          <div className="cart-overlay" onClick={() => setIsCartOpen(false)}>
+            <aside className="cart-panel" onClick={(event) => event.stopPropagation()}>
+              <div className="cart-panel-header">
+                <h3>Giỏ hàng của bạn</h3>
+                <button className="close-btn" onClick={() => setIsCartOpen(false)}>x</button>
               </div>
-            </div>
+              <div className="cart-panel-body">
+                {isCartBusy ? <p>Đang tải giỏ hàng...</p> : null}
+                {!isCartBusy && cart?.items?.length ? (
+                  <>
+                    {cart.items.map((item) => (
+                      <div key={item.productId} className="cart-item">
+                        <div className="cart-item-row">
+                          <div>
+                            <p className="cart-item-name">{item.name}</p>
+                            <p className="cart-item-meta">Số lượng: {item.quantity}</p>
+                          </div>
+                          <p>{formatVnd(item.unitPrice * item.quantity)}</p>
+                        </div>
+                      </div>
+                    ))}
+                    <div className="cart-total">
+                      Tổng SL: {cart.totals?.totalQuantity || 0} | Tạm tính: {formatVnd(cart.totals?.subtotal || 0)}
+                    </div>
+                  </>
+                ) : null}
+                {!isCartBusy && !cart?.items?.length ? <p className="cart-empty">Giỏ hàng đang trống.</p> : null}
+              </div>
+            </aside>
+          </div>
+        ) : null}
 
-            <div>
-              <h3 className="text-lg font-semibold text-white mb-6 uppercase tracking-wider text-sm">Hỗ trợ khách hàng</h3>
-              <ul className="space-y-4">
-                <li><a href="/" className="hover:text-white transition-colors flex items-center gap-2"><span className="w-1.5 h-1.5 rounded-full bg-indigo-500"></span> Chính sách đổi trả</a></li>
-                <li><a href="/" className="hover:text-white transition-colors flex items-center gap-2"><span className="w-1.5 h-1.5 rounded-full bg-indigo-500"></span> Chính sách bảo mật</a></li>
-                <li><a href="/" className="hover:text-white transition-colors flex items-center gap-2"><span className="w-1.5 h-1.5 rounded-full bg-indigo-500"></span> Hướng dẫn mua hàng</a></li>
-                <li><a href="/" className="hover:text-white transition-colors flex items-center gap-2"><span className="w-1.5 h-1.5 rounded-full bg-indigo-500"></span> Câu hỏi thường gặp</a></li>
+        {/* Footer */}
+        <footer id="about" className="footer">
+          <div className="footer-content">
+            <div className="footer-col">
+              <h2>Project Web nhóm 16</h2>
+              <p>Mang đến cho bạn những sản phẩm chất lượng nhất với dịch vụ chăm sóc khách hàng tận tâm. Mua sắm dễ dàng, an toàn và nhanh chóng.</p>
+            </div>
+            <div className="footer-col">
+              <h3>Hỗ trợ khách hàng</h3>
+              <ul>
+                <li><a href="/">Chính sách đổi trả</a></li>
+                <li><a href="/">Chính sách bảo mật</a></li>
+                <li><a href="/">Hướng dẫn mua hàng</a></li>
               </ul>
             </div>
-
-            <div>
-              <h3 className="text-lg font-semibold text-white mb-6 uppercase tracking-wider text-sm">Liên hệ</h3>
-              <ul className="space-y-4 text-gray-400">
-                <li className="flex items-start gap-3">
-                  <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6 text-indigo-500 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
-                  </svg>
-                  <span>Soict - HUST</span>
-                </li>
-                <li className="flex items-center gap-3">
-                  <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 text-indigo-500 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z" />
-                  </svg>
-                  <span>0123 456 789</span>
-                </li>
-              </ul>
-            </div>
-
-            <div className="col-span-1 lg:col-span-1">
-              <h3 className="text-lg font-semibold text-white mb-6 uppercase tracking-wider text-sm">Đăng ký nhận tin</h3>
-              <p className="mb-4 text-gray-400">Nhận ngay thông tin về các ưu đãi mới nhất.</p>
-              <div className="flex">
-                <input
-                  type="email"
-                  placeholder="Email của bạn..."
-                  className="px-4 py-3 bg-gray-800 border-none rounded-l-lg outline-none focus:ring-2 focus:ring-indigo-500 flex-1 text-white"
-                />
-                <button className="px-6 py-3 bg-indigo-600 hover:bg-indigo-700 text-white font-medium rounded-r-lg transition-colors">
-                  Gửi
-                </button>
+            <div className="footer-col">
+              <h3>Đăng ký nhận tin</h3>
+              <p>Nhận ngay thông tin về các ưu đãi mới nhất.</p>
+              <div className="newsletter">
+                <input type="email" placeholder="Email của bạn..." />
+                <button>Gửi</button>
               </div>
             </div>
           </div>
-
-          <div className="text-center pt-8 border-t border-gray-800 text-gray-500 text-sm">
+          <div className="footer-bottom">
             &copy; 2026 Project Web nhóm 16. All rights reserved.
           </div>
-        </div>
-      </footer>
-    </div>
+        </footer>
+      </div>
+    </>
   );
 };
 

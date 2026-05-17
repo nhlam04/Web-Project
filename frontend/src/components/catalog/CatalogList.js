@@ -1,5 +1,7 @@
-import React, { useState, useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+
+const CATALOG_BASE_URL = process.env.REACT_APP_CATALOG_URL || 'http://127.0.0.1:8000';
 
 const CatalogList = () => {
   const [catalogs, setCatalogs] = useState([]);
@@ -14,26 +16,25 @@ const CatalogList = () => {
   const fetchCatalogs = async () => {
     try {
       setLoading(true);
-      const response = await fetch('http://127.0.0.1:8000/api/v1/catalogs');
+      const response = await fetch(`${CATALOG_BASE_URL}/api/v1/catalogs`);
       if (!response.ok) {
-        throw new Error('Không thể tải danh mục cấu hình');
+        throw new Error('Khong the tai danh muc');
       }
       const data = await response.json();
       setCatalogs(data);
     } catch (err) {
       setError(err.message);
-      console.error("Lỗi khi tải danh mục:", err);
     } finally {
       setLoading(false);
     }
   };
 
   if (loading) {
-    return <div className="catalog-loading">Đang tải danh mục...</div>;
+    return <div className="catalog-loading">Dang tai danh muc...</div>;
   }
 
   if (error) {
-    return <div className="catalog-error">Lỗi: {error}</div>;
+    return <div className="catalog-error">Loi: {error}</div>;
   }
 
   return (
@@ -100,20 +101,20 @@ const CatalogList = () => {
       `}</style>
 
       <div className="catalog-header">
-        <h2 className="catalog-title">Danh Mục Sản Phẩm</h2>
-        <p className="catalog-subtitle">Khám phá các sản phẩm theo danh mục</p>
+        <h2 className="catalog-title">Danh Muc San Pham</h2>
+        <p className="catalog-subtitle">Kham pha cac san pham theo danh muc</p>
       </div>
 
       {catalogs.length === 0 ? (
-        <div style={{ textAlign: 'center', color: '#6b7280' }}>Chưa có danh mục nào.</div>
+        <div style={{ textAlign: 'center', color: '#6b7280' }}>Chua co danh muc nao.</div>
       ) : (
         <div className="catalog-grid">
           {catalogs.map((catalog) => (
-            <div 
-              key={catalog.id} 
+            <div
+              key={catalog.id}
               className="catalog-card"
               onClick={() => navigate(`/catalogs/${catalog.id}`)}
-              title={`Xem các sản phẩm trong ${catalog.product_type}`}
+              title={`Xem cac san pham trong ${catalog.product_type}`}
             >
               <div className="catalog-name">{catalog.product_type}</div>
             </div>
