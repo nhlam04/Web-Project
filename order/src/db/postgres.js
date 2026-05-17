@@ -86,6 +86,13 @@ async function initDatabase() {
       published_at TIMESTAMPTZ NULL
     );
 
+    CREATE TABLE IF NOT EXISTS ordering.inbox_events (
+      consumer_name TEXT NOT NULL,
+      event_id TEXT NOT NULL,
+      processed_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+      PRIMARY KEY (consumer_name, event_id)
+    );
+
     ALTER TABLE ordering.outbox_events
       ADD COLUMN IF NOT EXISTS exchange_name TEXT NULL;
 

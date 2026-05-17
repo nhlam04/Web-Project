@@ -1,8 +1,12 @@
 const express = require("express");
 const { z } = require("zod");
 const cartService = require("../services/cartService");
+const { attachIdentity, requireIdentity } = require("../middleware/auth");
 
 const router = express.Router();
+
+router.use(attachIdentity);
+router.use(requireIdentity);
 
 const createCartSchema = z.object({
   userId: z.string().min(1),
@@ -24,7 +28,11 @@ const updateItemSchema = z.object({
 router.post("/", async (req, res, next) => {
   try {
     const payload = createCartSchema.parse(req.body);
-    const cart = await cartService.createCart(payload);
+    const userId = req.identity?.userId || payload.userId;
+    const cart = await cartService.createCart({
+      ...payload,
+      userId,
+    });
     return res.status(201).json({ data: cart });
   } catch (err) {
     return next(err);

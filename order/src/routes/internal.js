@@ -5,6 +5,7 @@ const orderService = require("../services/orderService");
 const router = express.Router();
 
 const fulfillmentEventSchema = z.object({
+  eventId: z.string().optional(),
   eventType: z.enum([
     "fulfillment.seller-order-confirmed",
     "fulfillment.status-updated",
