@@ -1,8 +1,12 @@
 const express = require("express");
 const { z } = require("zod");
 const orderService = require("../services/orderService");
+const { attachIdentity, requireIdentity } = require("../middleware/auth");
 
 const router = express.Router();
+
+router.use(attachIdentity);
+router.use(requireIdentity);
 
 const createOrderSchema = z.object({
   cartId: z.string().min(1),
@@ -27,7 +31,11 @@ const cancelOrderSchema = z.object({
 router.post("/", async (req, res, next) => {
   try {
     const payload = createOrderSchema.parse(req.body);
-    const order = await orderService.createOrderFromCart(payload);
+    const userId = req.identity?.userId || payload.userId;
+    const order = await orderService.createOrderFromCart({
+      ...payload,
+      userId,
+    });
     return res.status(201).json({ data: order });
   } catch (err) {
     return next(err);
@@ -45,10 +53,10 @@ router.get("/:orderId", async (req, res, next) => {
 
 router.get("/", async (req, res, next) => {
   try {
-    const userId = req.query.userId;
+    const userId = (typeof req.query.userId === "string" && req.query.userId) || req.identity?.userId;
 
-    if (!userId || typeof userId !== "string") {
-      const err = new Error("Missing userId query parameter");
+    if (!userId) {
+      const err = new Error("Missing userId query parameter or authenticated identity");
       err.status = 400;
       err.code = "INVALID_QUERY";
       throw err;

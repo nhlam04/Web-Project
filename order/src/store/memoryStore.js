@@ -1,6 +1,11 @@
 const { randomUUID } = require("crypto");
 const { getPool, withTransaction } = require("../db/postgres");
-const { getRoutingMetadata } = require("../messaging/eventRouting");
+const {
+  buildOrderCancelledPayload,
+  buildOrderCreatedPayload,
+  buildOrderStatusUpdatedPayload,
+  getOrderRoutingMetadata,
+} = require("../contracts/eventContract");
 
 function nowIso() {
   return new Date().toISOString();
@@ -299,7 +304,7 @@ async function listOrdersByUser(userId, client) {
 
 async function pushOutboxEvent(event, client) {
   const db = client || getPool();
-  const routing = getRoutingMetadata(event.eventType);
+  const routing = getOrderRoutingMetadata(event.eventType);
   const outbox = {
     id: randomUUID(),
     aggregateType: "ORDER",
@@ -399,6 +404,31 @@ async function markOutboxPublished(outboxId, client) {
   };
 }
 
+async function isDuplicateEvent(consumerName, eventId, client) {
+  const db = client || getPool();
+  const result = await db.query(
+    `
+      SELECT 1
+      FROM ordering.inbox_events
+      WHERE consumer_name = $1 AND event_id = $2
+    `,
+    [consumerName, eventId],
+  );
+  return result.rowCount > 0;
+}
+
+async function markEventProcessed(consumerName, eventId, client) {
+  const db = client || getPool();
+  await db.query(
+    `
+      INSERT INTO ordering.inbox_events (consumer_name, event_id)
+      VALUES ($1, $2)
+      ON CONFLICT DO NOTHING
+    `,
+    [consumerName, eventId],
+  );
+}
+
 module.exports = {
   withTransaction,
   createCart,
@@ -412,4 +442,6 @@ module.exports = {
   pushOutboxEvent,
   listOutboxPending,
   markOutboxPublished,
+  isDuplicateEvent,
+  markEventProcessed,
 };

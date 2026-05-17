@@ -21,6 +21,10 @@ const config = {
     exchange: process.env.RABBITMQ_EXCHANGE || "ecommerce.events",
     exchangeType: process.env.RABBITMQ_EXCHANGE_TYPE || "topic",
   },
+  iam: {
+    baseUrl: process.env.IAM_BASE_URL || "http://localhost:3001",
+    authRequired: process.env.ORDERING_AUTH_REQUIRED === "true",
+  },
   outboxPublisher: {
     enabled: process.env.OUTBOX_PUBLISHER_ENABLED !== "false",
     pollIntervalMs: Number(process.env.OUTBOX_PUBLISHER_POLL_MS || 3000),
@@ -34,6 +38,9 @@ const config = {
       "fulfillment.seller-order-confirmed,fulfillment.status-updated,fulfillment.completed",
     ),
     prefetch: Number(process.env.FULFILLMENT_CONSUMER_PREFETCH || 20),
+    maxAttempts: Number(process.env.FULFILLMENT_CONSUMER_MAX_ATTEMPTS || 5),
+    dlqExchange: process.env.FULFILLMENT_CONSUMER_DLQ_EXCHANGE || "ecommerce.events.dlq",
+    dlqQueue: process.env.FULFILLMENT_CONSUMER_DLQ_QUEUE || "ordering.fulfillment-events.dlq",
     reconnectIntervalMs: Number(process.env.FULFILLMENT_CONSUMER_RECONNECT_MS || 5000),
   },
 };

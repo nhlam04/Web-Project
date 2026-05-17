@@ -10,7 +10,8 @@ Node.js service for cart and order management in a microservice e-commerce syste
 - Support order cancellation with transition rules.
 - Publish order domain events through outbox.
 - Consume fulfillment events to update order status.
-- Persist carts, orders, and outbox data in PostgreSQL (`ordering` schema).
+- Validate optional IAM identities for cart and order endpoints.
+- Persist carts, orders, inbox, and outbox data in PostgreSQL (`ordering` schema).
 
 ## Quick start
 
@@ -54,10 +55,15 @@ Environment variables:
 - `OUTBOX_PUBLISHER_ENABLED` (default: `true`)
 - `OUTBOX_PUBLISHER_POLL_MS` (default: `3000`)
 - `OUTBOX_PUBLISHER_BATCH_SIZE` (default: `50`)
+- `IAM_BASE_URL` (default: `http://localhost:3001`)
+- `IAM_AUTH_REQUIRED` (default: `false`)
 - `FULFILLMENT_CONSUMER_ENABLED` (default: `true`)
 - `FULFILLMENT_CONSUMER_QUEUE` (default: `ordering.fulfillment-events`)
+- `FULFILLMENT_CONSUMER_DLQ_EXCHANGE` (default: `ordering.fulfillment.dlq`)
+- `FULFILLMENT_CONSUMER_DLQ_QUEUE` (default: `ordering.fulfillment-events.dlq`)
 - `FULFILLMENT_CONSUMER_ROUTING_KEYS` (default: `fulfillment.seller-order-confirmed,fulfillment.status-updated,fulfillment.completed`)
 - `FULFILLMENT_CONSUMER_PREFETCH` (default: `20`)
+- `FULFILLMENT_CONSUMER_MAX_ATTEMPTS` (default: `5`)
 - `FULFILLMENT_CONSUMER_RECONNECT_MS` (default: `5000`)
 
 Copy `.env.example` to `.env` and adjust values if needed.

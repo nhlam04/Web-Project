@@ -1,14 +1,9 @@
 const amqp = require("amqplib");
 const config = require("../config");
 const orderService = require("../services/orderService");
+const { normalizeFulfillmentEvent } = require("../contracts/eventContract");
 
-const ROUTING_KEY_EVENT_MAP = {
-  "fulfillment.seller-order-confirmed": "fulfillment.seller-order-confirmed",
-  "fulfillment.status-updated": "fulfillment.status-updated",
-  "fulfillment.completed": "fulfillment.completed",
-  "fulfillment.seller-confirmed": "SellerOrderConfirmed",
-  "fulfillment.delivery.updated": "DeliveryUpdated",
-};
+const CONSUMER_NAME = "ordering.FulfillmentConsumer";
 
 function tryParseJson(buffer) {
   try {
@@ -18,32 +13,38 @@ function tryParseJson(buffer) {
   }
 }
 
-function normalizeFulfillmentEvent(message, routingKey) {
-  if (!message || typeof message !== "object") {
-    return null;
-  }
+function getAttemptCount(msg) {
+  return Number(msg.properties?.headers?.["x-attempt"] || 0);
+}
 
-  const inferredType = ROUTING_KEY_EVENT_MAP[routingKey] || null;
-  const eventType = message.eventType || message.eventName || message.type || inferredType;
+function buildHeaders(msg, event, nextAttempt, lastError) {
+  return {
+    ...(msg.properties?.headers || {}),
+    "x-attempt": nextAttempt,
+    "x-consumer": CONSUMER_NAME,
+    "x-original-event-id": event.eventId || null,
+    "x-original-routing-key": msg.fields.routingKey || null,
+    "x-last-error": lastError || null,
+  };
+}
 
-  // Supports common wrappers:
-  // - { eventType, data }
-  // - { eventType, payload }
-  // - { type, payload }
-  // - { payload: { orderId, ... } }
-  let data = message.data;
-  if (!data || typeof data !== "object") {
-    data = message.payload;
-  }
-  if (!data || typeof data !== "object") {
-    data = message;
-  }
+async function republishForRetry(channel, msg, event, nextAttempt, lastError) {
+  const routingKey = msg.fields.routingKey || event.routingKey || event.eventType;
+  const published = channel.publish(
+    config.rabbitmq.exchange,
+    routingKey,
+    msg.content,
+    {
+      contentType: "application/json",
+      persistent: true,
+      headers: buildHeaders(msg, event, nextAttempt, lastError),
+    },
+  );
 
-  if (!eventType || !data || !data.orderId) {
-    return null;
+  if (!published) {
+    // eslint-disable-next-line no-await-in-loop
+    await new Promise((resolve) => channel.once("drain", resolve));
   }
-
-  return { eventType, data };
 }
 
 function startFulfillmentConsumer() {
@@ -109,10 +110,18 @@ function startFulfillmentConsumer() {
       await channel.assertExchange(config.rabbitmq.exchange, config.rabbitmq.exchangeType, {
         durable: true,
       });
+      await channel.assertExchange(config.fulfillmentConsumer.dlqExchange, config.rabbitmq.exchangeType, {
+        durable: true,
+      });
 
       await channel.assertQueue(config.fulfillmentConsumer.queue, {
         durable: true,
+        arguments: {
+          "x-dead-letter-exchange": config.fulfillmentConsumer.dlqExchange,
+        },
       });
+      await channel.assertQueue(config.fulfillmentConsumer.dlqQueue, { durable: true });
+      await channel.bindQueue(config.fulfillmentConsumer.dlqQueue, config.fulfillmentConsumer.dlqExchange, "#");
 
       for (const routingKey of config.fulfillmentConsumer.routingKeys) {
         // eslint-disable-next-line no-await-in-loop
@@ -132,7 +141,7 @@ function startFulfillmentConsumer() {
           if (!parsed) {
             // eslint-disable-next-line no-console
             console.error("fulfillment-consumer invalid JSON message");
-            channel.ack(msg);
+            channel.nack(msg, false, false);
             return;
           }
 
@@ -141,22 +150,30 @@ function startFulfillmentConsumer() {
           if (!event) {
             // eslint-disable-next-line no-console
             console.error("fulfillment-consumer unsupported message", { routingKey });
-            channel.ack(msg);
+            channel.nack(msg, false, false);
             return;
           }
 
           try {
-            await orderService.applyFulfillmentEvent(event);
+            await orderService.applyFulfillmentEvent(event, CONSUMER_NAME);
             channel.ack(msg);
           } catch (err) {
-            // Acknowledge and log to avoid poison-loop. Retry policy can be layered later with DLQ.
+            const nextAttempt = getAttemptCount(msg) + 1;
             // eslint-disable-next-line no-console
             console.error("fulfillment-consumer failed to apply event", {
               message: err.message,
               eventType: event.eventType,
               orderId: event.data.orderId,
+              attempt: nextAttempt,
             });
-            channel.ack(msg);
+
+            if (nextAttempt < config.fulfillmentConsumer.maxAttempts) {
+              await republishForRetry(channel, msg, event, nextAttempt, err.message);
+              channel.ack(msg);
+              return;
+            }
+
+            channel.nack(msg, false, false);
           }
         },
         { noAck: false },
