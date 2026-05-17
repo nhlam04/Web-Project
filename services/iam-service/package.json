@@ -12,6 +12,7 @@
     "bcryptjs": "^2.4.3",
     "jsonwebtoken": "^9.0.0",
     "uuid": "^9.0.0",
-    "amqplib": "^0.10.3"
+    "amqplib": "^0.10.3",
+    "cors": "^2.8.5"
   }
 }
