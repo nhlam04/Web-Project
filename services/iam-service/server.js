@@ -35,6 +35,7 @@ const { v4: uuidv4 } = require('uuid');
 
 // Secret key để ký JWT (Trong thực tế sẽ để ở file .env)
 const JWT_SECRET = process.env.JWT_SECRET || 'super-secret-key-microservices';
+const JWT_REFRESH_SECRET = process.env.JWT_REFRESH_SECRET || 'fallback-refresh-secret';
 
 // -----------------------------------------
 // 1. API Đăng ký (Nâng cấp Outbox Pattern)
@@ -103,14 +104,82 @@ app.post('/login', async (req, res) => {
             return res.status(401).json({ error: 'Sai tài khoản hoặc mật khẩu' });
         }
 
-        // Tạo thẻ thông hành (JWT Token) có hạn 1 giờ
-        const token = jwt.sign(
-            { userId: user.id, username: user.username }, 
+        // 1. Tạo Access Token (Ngắn hạn - 15 phút) dùng để đi qua các trạm gác API
+        const accessToken = jwt.sign(
+            { 
+                userId: user.id, 
+                username: user.username,
+                role: user.role 
+            }, 
             JWT_SECRET, 
-            { expiresIn: '1h' }
+            { expiresIn: '15m' }
         );
 
-        res.status(200).json({ message: 'Đăng nhập thành công!', token });
+        // 2. Tạo Refresh Token (Dài hạn - 7 ngày) dùng để xin cấp lại Access Token khi hết hạn
+        const refreshToken = jwt.sign(
+            { userId: user.id }, 
+            JWT_REFRESH_SECRET, 
+            { expiresIn: '7d' }
+        );
+
+        // 3. Lưu Refresh Token vào Database để quản lý phiên đăng nhập
+        await pool.query(
+            'INSERT INTO refresh_tokens (token, user_id) VALUES (?, ?)', 
+            [refreshToken, user.id]
+        );
+
+        res.status(200).json({ 
+            message: 'Đăng nhập thành công!', 
+            accessToken,
+            refreshToken
+        });
+    } catch (error) {
+        res.status(500).json({ error: error.message });
+    }
+});
+
+// -----------------------------------------
+// API Làm mới Token (Refresh Token)
+// -----------------------------------------
+app.post('/refresh', async (req, res) => {
+    const { refreshToken } = req.body;
+    if (!refreshToken) return res.status(401).json({ error: 'Không tìm thấy Refresh Token' });
+
+    try {
+        // Kiểm tra token có nằm trong Database không (đề phòng đã bị thu hồi)
+        const [rows] = await pool.query('SELECT * FROM refresh_tokens WHERE token = ?', [refreshToken]);
+        if (rows.length === 0) return res.status(403).json({ error: 'Refresh Token không hợp lệ hoặc đã bị thu hồi' });
+
+        // Xác minh Refresh Token
+        jwt.verify(refreshToken, JWT_REFRESH_SECRET, async (err, payload) => {
+            if (err) return res.status(403).json({ error: 'Refresh Token đã hết hạn' });
+
+            // Lấy lại thông tin user mới nhất từ DB để cấp Access Token mới
+            const [users] = await pool.query('SELECT username, role FROM users WHERE id = ?', [payload.userId]);
+            if (users.length === 0) return res.status(403).json({ error: 'User không tồn tại' });
+
+            const newAccessToken = jwt.sign(
+                { userId: payload.userId, username: users[0].username, role: users[0].role }, 
+                JWT_SECRET, 
+                { expiresIn: '15m' }
+            );
+
+            res.status(200).json({ accessToken: newAccessToken });
+        });
+    } catch (error) {
+        res.status(500).json({ error: error.message });
+    }
+});
+
+// -----------------------------------------
+// API Đăng xuất (Logout)
+// -----------------------------------------
+app.delete('/logout', async (req, res) => {
+    const { refreshToken } = req.body;
+    try {
+        // Xóa token khỏi Database
+        await pool.query('DELETE FROM refresh_tokens WHERE token = ?', [refreshToken]);
+        res.status(204).send(); // 204 No Content: Xóa thành công
     } catch (error) {
         res.status(500).json({ error: error.message });
     }
@@ -139,6 +208,18 @@ const authenticateToken = (req, res, next) => {
     });
 };
 
+const authorizeRole = (requiredRole) => {
+    return (req, res, next) => {
+        // req.user lấy từ middleware authenticateToken chạy trước đó
+        if (!req.user || req.user.role !== requiredRole) {
+            return res.status(403).json({ 
+                error: `Từ chối truy cập: Tính năng này yêu cầu quyền ${requiredRole}` 
+            });
+        }
+        next(); // Nếu đúng role thì cho đi tiếp
+    };
+};
+
 // -----------------------------------------
 // 3. API Lấy thông tin cá nhân (CẦN TOKEN)
 // -----------------------------------------
@@ -163,6 +244,16 @@ app.get('/me', authenticateToken, async (req, res) => {
 const amqp = require('amqplib');
 
 // -----------------------------------------
+// 4. API Dành riêng cho Admin (CẦN TOKEN + QUYỀN ADMIN)
+// -----------------------------------------
+app.get('/admin/dashboard', authenticateToken, authorizeRole('ADMIN'), async (req, res) => {
+    res.status(200).json({ 
+        message: 'Xin chào sếp! Đây là khu vực quản trị tối cao.',
+        adminInfo: req.user
+    });
+});
+
+// -----------------------------------------
 // Background Worker: Gửi sự kiện từ Outbox lên RabbitMQ
 // -----------------------------------------
 async function startOutboxProcessor() {
@@ -179,16 +270,20 @@ async function startOutboxProcessor() {
 
         // Cứ 5 giây quét bảng outbox 1 lần
         setInterval(async () => {
-            const [events] = await pool.query('SELECT * FROM outbox_events ORDER BY created_at ASC LIMIT 10');
-            
-            for (const event of events) {
-                // Bắn sự kiện lên RabbitMQ
-                const message = JSON.stringify({ id: event.id, type: event.event_type, payload: event.payload });
-                channel.publish(exchangeName, '', Buffer.from(message));
+            try { // <--- THÊM DÒNG NÀY
+                const [events] = await pool.query('SELECT * FROM outbox_events ORDER BY created_at ASC LIMIT 10');
                 
-                // Gửi thành công thì xóa khỏi Outbox
-                await pool.query('DELETE FROM outbox_events WHERE id = ?', [event.id]);
-                console.log(`📤 Đã gửi sự kiện: ${event.event_type}`);
+                for (const event of events) {
+                    // Bắn sự kiện lên RabbitMQ
+                    const message = JSON.stringify({ id: event.id, type: event.event_type, payload: event.payload });
+                    channel.publish(exchangeName, '', Buffer.from(message));
+                    
+                    // Gửi thành công thì xóa khỏi Outbox
+                    await pool.query('DELETE FROM outbox_events WHERE id = ?', [event.id]);
+                    console.log(`📤 Đã gửi sự kiện: ${event.event_type}`);
+                }
+            } catch (err) { // <--- THÊM KHỐI NÀY
+                console.error('⚠️ Lỗi khi quét Outbox (có thể DB đang khởi động):', err.message);
             }
         }, 5000);
 

@@ -17,12 +17,21 @@ USE iam;
 CREATE TABLE IF NOT EXISTS users (
     id CHAR(36) PRIMARY KEY,
     username VARCHAR(50) UNIQUE NOT NULL,
-    password_hash TEXT NOT NULL
+    password_hash TEXT NOT NULL,
+    role VARCHAR(20) DEFAULT 'USER'
 );
 
 CREATE TABLE IF NOT EXISTS roles (
     id CHAR(36) PRIMARY KEY,
     role_name VARCHAR(20) NOT NULL
+);
+
+-- Bảng lưu trữ Refresh Token
+CREATE TABLE IF NOT EXISTS refresh_tokens (
+    token VARCHAR(500) PRIMARY KEY,
+    user_id CHAR(36) NOT NULL,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
 );
 
 -- Bảng Outbox Pattern

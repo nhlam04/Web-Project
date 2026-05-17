@@ -1,72 +1,116 @@
-# Project Web Nhóm 16 - Quản Lý Bán Hàng
+# Web-Project - He Thong Quan Ly Ban Hang (Microservices)
 
-Dự án bao gồm 2 thành phần chính kết nối với nhau: 
-- **Backend (Catalog API)**: Được xây dựng bằng Python (FastAPI, SQLAlchemy).
-- **Frontend**: Hoạt động dưới dạng Single Page Application bằng React.js.
+Du an nay duoc xay dung theo kien truc Microservices, tap trung vao tinh mo rong, bao mat va kha nang chiu tai cao.
 
-## 🛠 Yêu cầu hệ thống cần chuẩn bị
-- **Python**: Phiên bản 3.9 trở lên để chạy máy chủ backend.
-- **Node.js**: Phiên bản 16 trở lên (đi kèm với npm) để chạy giao diện.
-- **MySQL / MariaDB**: Bạn có thể dùng XAMPP, WAMP hoặc MySQL Server độc lập.
+## Co Cau Ha Tang (Infrastructure)
 
----
+He thong su dung Docker Compose de quan ly toan bo cac thanh phan cot loi:
 
-## 1. Thiết lập Cơ sở dữ liệu (Database)
-1. Mở ứng dụng MySQL (Ví dụ: Start MySQL trong XAMPP Control Panel).
-2. Tạo một database mới có tên là `qlbanhang` (với Collation khuyến nghị là `utf8mb4_general_ci`).
-3. Import thẳng file `qlbanhang.sql` nằm ở thư mục gốc của dự án vào database `qlbanhang` vừa tạo để nạp sẵn cấu trúc các bảng và dữ liệu.
-*(Lưu ý: Nếu bạn cài đặt mật khẩu cho MySQL ở máy tính của bạn thì nhớ vào file `catalog/app/core/config.py` cập nhật tham số `DATABASE_URL` nhé!)*
+- API Gateway (Nginx): Cua ngo duy nhat (Cong 80) tiep nhan va dieu huong request tu Frontend.
+- Database (MySQL 8.0): He quan tri du lieu tap trung, duoc phan tach thanh 7 database doc lap cho tung service.
+- Message Broker (RabbitMQ): Trung tam dieu phoi su kien (Events) giua cac dich vu theo co che bat dong bo.
+- IAM Service (Node.js): Dich vu quan ly dinh danh va quyen truy cap.
 
----
+## IAM Service (Identity & Access Management)
 
-## 2. Thiết lập và chạy Backend (Catalog API)
-Backend cung cấp các đầu mối API CRUD về sản phẩm và người dùng.
+Dich vu nay chiu trach nhiem bao mat cho toan bo he thong.
 
-**Bước 1:** Mở terminal, truy cập vào thư mục `catalog`:
-```bash
-cd catalog
-```
+Tinh nang chinh:
+- Authentication: Dang ky va Dang nhap su dung JWT (JSON Web Token). Mat khau duoc ma hoa bang `bcryptjs`.
+- Authorization: Middleware bao ve cac API nhay cam.
+- Outbox Pattern: Dam bao su kien `UserCreated` duoc luu vao DB va day len RabbitMQ mot cach tin cay (Atomic Transaction).
 
-**Bước 2:** Khởi tạo môi trường ảo hóa (Khuyến nghị) và kích hoạt nó:
-- Trên Windows:
-  ```bash
-  python -m venv venv
-  .\venv\Scripts\activate
-  ```
+Danh muc API:
+- POST /api/auth/register: Dang ky tai khoan moi.
+- POST /api/auth/login: Dang nhap lay Token.
+- GET /api/auth/me: Lay thong tin ca nhan (Yeu cau Header `Authorization: Bearer <token>`).
 
-**Bước 3:** Cài đặt các thư viện cần dùng từ file requirements:
-```bash
-pip install -r requirements.txt
-```
+## Co So Du Lieu (MySQL)
 
-**Bước 4:** Khởi chạy Backend Server:
-```bash
-python run.py
-```
-> ⚡ Server FastAPI mặc định chạy ở địa chỉ: `http://127.0.0.1:8000`. Bạn có thể truy cập trực tiếp `http://127.0.0.1:8000/docs` để xem tài liệu Swagger UI và test các APIs.
+He thong da khoi tao san cac database sau:
+- iam: Luu tru nguoi dung va su kien outbox.
+- catalog: Du lieu san pham (da tich hop du lieu mau).
+- ordering, fulfillment, review, chat, notification: San sang cho cac service tiep theo.
 
----
+## Huong Dan Khoi Chay (Docker)
 
-## 3. Thiết lập và chạy Frontend
-Frontend hiển thị giao diện UI và giao tiếp liên tục với máy chủ Backend.
+Yeu cau may cai dat Docker va Docker Compose.
 
-**Bước 1:** Mở một cửa sổ terminal mới, di chuyển vào thư mục `frontend`:
-```bash
-cd frontend
-```
+1. Clone du an va truy cap thu muc goc:
+   ```bash
+   cd Web-Project
+   ```
 
-**Bước 2:** Cài đặt các node_modules và cấu trúc định tuyến cho React:
-```bash
-npm install
-npm install react-router-dom
-```
+2. Khoi dong toan bo he thong:
+   ```bash
+   docker-compose up -d --build
+   ```
 
-**Bước 3:** Chạy Server giao diện:
-```bash
-npm start
-```
-> ⚡ React Server sẽ khởi động ở `http://localhost:3000`. Hệ thống sẽ mở thẳng Landing Page vào trình duyệt mặc định của bạn. 
-> - Truy cập `http://localhost:3000/product-list` để xem danh sách sản phẩm.
-> - Chi tiết sản phẩm có thể xem tại route `http://localhost:3000/product-detail/:slug`.
+3. Kiem tra trang thai:
+   ```bash
+   docker-compose ps
+   ```
 
-Chúc các bạn phát triển web vui vẻ!
+4. Truy cap Dashboard RabbitMQ:
+   Dia chi: http://localhost:15672 (User/Pass: guest / guest).
+
+## Giao Tiep Lien Dich Vu (Events)
+
+Khi mot User duoc tao, IAM Service se ban mot su kien vao Exchange `microservices_events` tren RabbitMQ. Cac service khac (nhu Notification, Catalog) co the tao Queue va bind vao Exchange nay de lang nghe du lieu.
+
+## Catalog API + Frontend (Standalone)
+
+Neu ban muon chay Catalog API (Python) va Frontend (React) rieng biet khong qua Docker Compose, dung cac buoc sau.
+
+### 1. Thiet lap Co so du lieu
+
+1. Tao database moi ten la qlbanhang (Collation khuyen nghi: utf8mb4_general_ci).
+2. Import file qlbanhang.sql o thu muc goc vao database vua tao.
+3. Neu ban dat mat khau MySQL, cap nhat `DATABASE_URL` trong [catalog/app/core/config.py](catalog/app/core/config.py).
+
+### 2. Thiet lap va chay Backend (Catalog API)
+
+1. Mo terminal, truy cap thu muc catalog:
+   ```bash
+   cd catalog
+   ```
+
+2. Tao va kich hoat moi truong ao (khuyen nghi):
+   ```bash
+   python -m venv venv
+   .\venv\Scripts\activate
+   ```
+
+3. Cai dat thu vien:
+   ```bash
+   pip install -r requirements.txt
+   ```
+
+4. Khoi chay server:
+   ```bash
+   python run.py
+   ```
+
+Server FastAPI mac dinh chay o http://127.0.0.1:8000. Tai lieu Swagger: http://127.0.0.1:8000/docs.
+
+### 3. Thiet lap va chay Frontend
+
+1. Mo terminal moi, truy cap thu muc frontend:
+   ```bash
+   cd frontend
+   ```
+
+2. Cai dat goi phu thuoc:
+   ```bash
+   npm install
+   npm install react-router-dom
+   ```
+
+3. Chay giao dien:
+   ```bash
+   npm start
+   ```
+
+React Server se chay o http://localhost:3000.
+
+Cong nghe: Node.js, MySQL, RabbitMQ, Nginx, Docker.
