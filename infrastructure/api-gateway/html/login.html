@@ -1,0 +1,133 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Đăng Nhập Hệ Thống</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: #f0f2f5;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            margin: 0;
+        }
+        .login-container {
+            background-color: white;
+            padding: 40px;
+            border-radius: 8px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+            width: 100%;
+            max-width: 360px;
+        }
+        h2 {
+            text-align: center;
+            color: #1a73e8;
+            margin-bottom: 24px;
+        }
+        .input-group {
+            margin-bottom: 16px;
+        }
+        .input-group label {
+            display: block;
+            margin-bottom: 8px;
+            color: #5f6368;
+            font-size: 14px;
+        }
+        .input-group input {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid #dadce0;
+            border-radius: 4px;
+            box-sizing: border-box;
+            font-size: 14px;
+        }
+        button {
+            width: 100%;
+            padding: 12px;
+            background-color: #1a73e8;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            font-size: 16px;
+            cursor: pointer;
+            margin-top: 10px;
+        }
+        button:hover {
+            background-color: #1557b0;
+        }
+        #message {
+            margin-top: 16px;
+            text-align: center;
+            font-size: 14px;
+        }
+        .error { color: #d93025; }
+        .success { color: #1e8e3e; }
+    </style>
+</head>
+<body>
+
+<div class="login-container">
+    <h2>Đăng Nhập</h2>
+    <form id="loginForm">
+        <div class="input-group">
+            <label for="username">Tên tài khoản</label>
+            <input type="text" id="username" required placeholder="Nhập tài khoản...">
+        </div>
+        <div class="input-group">
+            <label for="password">Mật khẩu</label>
+            <input type="password" id="password" required placeholder="Nhập mật khẩu...">
+        </div>
+        <button type="submit">Đăng Nhập</button>
+    </form>
+    <div id="message"></div>
+</div>
+
+<script>
+    document.getElementById('loginForm').addEventListener('submit', async function(e) {
+        e.preventDefault(); // Ngăn trình duyệt tải lại trang
+
+        const username = document.getElementById('username').value;
+        const password = document.getElementById('password').value;
+        const messageDiv = document.getElementById('message');
+        messageDiv.textContent = 'Đang xử lý...';
+        messageDiv.className = '';
+
+        try {
+            // Gọi API qua Nginx Gateway
+            const response = await fetch('http://localhost/api/auth/login', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({ username, password })
+            });
+
+            const data = await response.json();
+
+            if (response.ok) {
+                messageDiv.textContent = 'Đăng nhập thành công!';
+                messageDiv.className = 'success';
+                
+                // Lưu Token vào LocalStorage để dùng cho các API sau
+                localStorage.setItem('accessToken', data.accessToken);
+                localStorage.setItem('refreshToken', data.refreshToken);
+                
+                console.log('Access Token:', data.accessToken);
+                console.log('Refresh Token:', data.refreshToken);
+            } else {
+                messageDiv.textContent = data.error || 'Có lỗi xảy ra';
+                messageDiv.className = 'error';
+            }
+        } catch (error) {
+            messageDiv.textContent = 'Không thể kết nối đến máy chủ';
+            messageDiv.className = 'error';
+            console.error('Lỗi mạng:', error);
+        }
+    });
+</script>
+
+</body>
+</html>
