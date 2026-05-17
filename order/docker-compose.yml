@@ -1,0 +1,20 @@
+services:
+  postgres:
+    image: postgres:15
+    container_name: ordering-postgres
+    environment:
+      POSTGRES_USER: admin
+      POSTGRES_PASSWORD: password123
+      POSTGRES_DB: microservices_db
+    ports:
+      - "5432:5432"
+    volumes:
+      - ordering_pg_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U admin -d microservices_db"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+volumes:
+  ordering_pg_data:
