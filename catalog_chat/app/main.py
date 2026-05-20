@@ -4,7 +4,7 @@ from app.api.api import api_router
 from app.core.config import settings
 
 from app.db.database import engine, Base
-from app.models import user, product, catalog
+from app.models import user, product, catalog, chat
 
 app = FastAPI(
     title=settings.PROJECT_NAME,

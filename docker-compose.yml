@@ -23,7 +23,7 @@ services:
 
   # 3. IAM Service
   iam-service:
-    build: ./services/iam-service
+    build: ./backend/apps/iam-service
     container_name: web-project-iam-service-1
     depends_on:
       - mysql-server
