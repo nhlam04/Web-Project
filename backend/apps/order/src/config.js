@@ -18,7 +18,7 @@ const config = {
   },
   rabbitmq: {
     url: process.env.RABBITMQ_URL || "amqp://admin:admin123@localhost:5672",
-    exchange: process.env.RABBITMQ_EXCHANGE || "ecommerce.events",
+    exchange: process.env.RABBITMQ_EXCHANGE || "cnweb.events",
     exchangeType: process.env.RABBITMQ_EXCHANGE_TYPE || "topic",
   },
   iam: {
@@ -35,11 +35,11 @@ const config = {
     queue: process.env.FULFILLMENT_CONSUMER_QUEUE || "ordering.fulfillment-events",
     routingKeys: parseCsv(
       process.env.FULFILLMENT_CONSUMER_ROUTING_KEYS,
-      "fulfillment.seller-order-confirmed,fulfillment.status-updated,fulfillment.completed",
+      "fulfillment.seller_order_confirmed,fulfillment.delivery_updated,fulfillment.order_completed",
     ),
     prefetch: Number(process.env.FULFILLMENT_CONSUMER_PREFETCH || 20),
     maxAttempts: Number(process.env.FULFILLMENT_CONSUMER_MAX_ATTEMPTS || 5),
-    dlqExchange: process.env.FULFILLMENT_CONSUMER_DLQ_EXCHANGE || "ecommerce.events.dlq",
+    dlqExchange: process.env.FULFILLMENT_CONSUMER_DLQ_EXCHANGE || "cnweb.events.dlq",
     dlqQueue: process.env.FULFILLMENT_CONSUMER_DLQ_QUEUE || "ordering.fulfillment-events.dlq",
     reconnectIntervalMs: Number(process.env.FULFILLMENT_CONSUMER_RECONNECT_MS || 5000),
   },

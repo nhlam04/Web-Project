@@ -16,7 +16,7 @@ const CatalogList = () => {
   const fetchCatalogs = async () => {
     try {
       setLoading(true);
-      const response = await fetch(`${CATALOG_BASE_URL}/api/v1/catalogs`);
+      const response = await fetch(`${CATALOG_BASE_URL}/api/v1/catalogs/`);
       if (!response.ok) {
         throw new Error('Khong the tai danh muc');
       }

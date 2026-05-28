@@ -1,17 +1,23 @@
 const config = require("../config");
 
 const ORDER_EVENT_ROUTING = {
-  "order.created": "order.created",
+  OrderPlaced: "order.placed",
+  OrderCancelled: "order.cancelled",
+  OrderStatusUpdated: "order.status_updated",
+  "order.created": "order.placed",
   "order.cancelled": "order.cancelled",
-  "order.status.updated": "order.status.updated",
+  "order.status.updated": "order.status_updated",
 };
 
 const FULFILLMENT_EVENT_ALIASES = {
-  SellerOrderConfirmed: "fulfillment.seller-order-confirmed",
-  "fulfillment.seller-confirmed": "fulfillment.seller-order-confirmed",
-  DeliveryUpdated: "fulfillment.status-updated",
-  "fulfillment.delivery.updated": "fulfillment.status-updated",
-  OrderCompleted: "fulfillment.completed",
+  SellerOrderConfirmed: "fulfillment.seller_order_confirmed",
+  "fulfillment.seller-confirmed": "fulfillment.seller_order_confirmed",
+  "fulfillment.seller-order-confirmed": "fulfillment.seller_order_confirmed",
+  DeliveryUpdated: "fulfillment.delivery_updated",
+  "fulfillment.delivery.updated": "fulfillment.delivery_updated",
+  "fulfillment.status-updated": "fulfillment.delivery_updated",
+  OrderCompleted: "fulfillment.order_completed",
+  "fulfillment.completed": "fulfillment.order_completed",
 };
 
 function canonicalizeFulfillmentEventName(eventName) {
@@ -29,14 +35,18 @@ function buildOrderCreatedPayload(order) {
   return {
     orderId: order.id,
     customerId: order.userId,
-    sellerId: order.items[0]?.sellerId || "unknown-seller",
+    shippingAddress: order.shippingAddress,
+    paymentMethod: order.paymentMethod,
+    currency: order.currency,
+    totals: order.totals,
     items: order.items.map((item) => ({
       productId: item.productId,
-      productName: item.name,
+      sellerId: item.sellerId,
+      name: item.name,
       quantity: item.quantity,
-      price: item.unitPrice,
+      unitPrice: item.unitPrice,
+      lineTotal: item.lineTotal,
     })),
-    totalAmount: order.totals.subtotal,
   };
 }
 

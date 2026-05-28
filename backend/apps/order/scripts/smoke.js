@@ -108,8 +108,8 @@ async function run() {
 
   const pendingOutbox = await orderService.listPendingOutbox();
 
-  const hasPlaced = pendingOutbox.some((event) => event.eventType === "order.created");
-  const hasCancelled = pendingOutbox.some((event) => event.eventType === "order.cancelled");
+  const hasPlaced = pendingOutbox.some((event) => event.eventType === "OrderPlaced");
+  const hasCancelled = pendingOutbox.some((event) => event.eventType === "OrderCancelled");
 
   assert(hasPlaced, "Expected OrderPlaced event in outbox");
   assert(hasCancelled, "Expected OrderCancelled event in outbox");

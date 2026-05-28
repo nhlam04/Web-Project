@@ -24,6 +24,13 @@ def read_product(product_id: int, db: Session = Depends(get_db)):
         raise HTTPException(status_code=404, detail="Product not found")
     return db_product
 
+@router.get("/{product_id}/availability")
+def read_product_availability(product_id: int, db: Session = Depends(get_db)):
+    availability = product_service.get_availability(db, product_id=product_id)
+    if availability is None:
+        raise HTTPException(status_code=404, detail="Product not found")
+    return availability
+
 @router.put("/{product_id}", response_model=ProductResponse)
 def update_product(product_id: int, product_update: ProductUpdate, db: Session = Depends(get_db)):
     db_product = product_service.get_product(db, product_id=product_id)

@@ -24,6 +24,10 @@ const createOrderSchema = z.object({
   paymentMethod: z.enum(["COD", "CARD", "WALLET"]),
 });
 
+const checkoutSchema = createOrderSchema.omit({ userId: true }).extend({
+  userId: z.string().min(1).optional(),
+});
+
 const cancelOrderSchema = z.object({
   reason: z.string().min(1).optional(),
 });
@@ -37,6 +41,26 @@ router.post("/", async (req, res, next) => {
       userId,
     });
     return res.status(201).json({ data: order });
+  } catch (err) {
+    return next(err);
+  }
+});
+
+router.post("/checkout", async (req, res, next) => {
+  try {
+    const payload = checkoutSchema.parse(req.body);
+    const userId = req.identity?.userId || payload.userId || "user-demo-001";
+    const order = await orderService.createOrderFromCart({
+      ...payload,
+      userId,
+    });
+    return res.status(201).json({
+      data: {
+        orderId: order.id,
+        status: order.status,
+        order,
+      },
+    });
   } catch (err) {
     return next(err);
   }

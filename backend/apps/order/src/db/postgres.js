@@ -31,7 +31,7 @@ async function initDatabase() {
       user_id TEXT NOT NULL,
       currency CHAR(3) NOT NULL,
       status TEXT NOT NULL,
-      totals JSONB NOT NULL DEFAULT '{"subtotal":0,"totalQuantity":0}',
+      totals JSONB NOT NULL DEFAULT '{"subtotal":0,"totalQuantity":0,"total":0}',
       created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
       updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
       checked_out_at TIMESTAMPTZ NULL

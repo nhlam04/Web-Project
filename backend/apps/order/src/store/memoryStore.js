@@ -53,7 +53,7 @@ async function createCart({ userId, currency = "VND" }, client) {
       INSERT INTO ordering.carts (id, user_id, currency, status, totals, created_at, updated_at, checked_out_at)
       VALUES ($1, $2, $3, 'ACTIVE', $4::jsonb, $5::timestamptz, $5::timestamptz, NULL)
     `,
-    [id, userId, currency, JSON.stringify({ subtotal: 0, totalQuantity: 0 }), createdAt],
+    [id, userId, currency, JSON.stringify({ subtotal: 0, totalQuantity: 0, total: 0 }), createdAt],
   );
 
   return {
@@ -62,7 +62,7 @@ async function createCart({ userId, currency = "VND" }, client) {
     currency,
     status: "ACTIVE",
     items: [],
-    totals: { subtotal: 0, totalQuantity: 0 },
+    totals: { subtotal: 0, totalQuantity: 0, total: 0 },
     createdAt,
     updatedAt: createdAt,
     checkedOutAt: null,

@@ -19,7 +19,7 @@ function assertActiveCart(cart) {
 function recalculateTotals(items) {
   const subtotal = items.reduce((sum, item) => sum + item.unitPrice * item.quantity, 0);
   const totalQuantity = items.reduce((sum, item) => sum + item.quantity, 0);
-  return { subtotal, totalQuantity };
+  return { subtotal, totalQuantity, total: subtotal };
 }
 
 async function createCart(input) {

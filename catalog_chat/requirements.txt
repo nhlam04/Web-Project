@@ -5,3 +5,4 @@ pymysql>=1.1.0
 pydantic-settings>=2.0.0
 motor
 websockets
+pika>=1.3.2

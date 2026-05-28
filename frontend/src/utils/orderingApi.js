@@ -47,7 +47,7 @@ async function getOrCreateCart() {
 }
 
 function resolveSellerId(product) {
-  return product.sellerId || product.seller_id || 'seller-unknown';
+  return String(product.sellerId || product.seller_id || product.shopId || 'seller-unknown');
 }
 
 function resolveUnitPrice(product) {
@@ -77,6 +77,31 @@ async function addProductToCart(cartId, product, quantity = 1) {
   return parseResponse(response);
 }
 
+async function checkoutCart(cartId) {
+  const response = await fetch(`${ORDERING_BASE_URL}/api/v1/orders/checkout`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      userId: DEMO_USER_ID,
+      cartId,
+      shippingAddress: {
+        recipientName: 'Demo User',
+        phone: '0900000000',
+        line1: '123 Nguyen Trai',
+        ward: 'Ward 1',
+        district: 'District 1',
+        city: 'Ho Chi Minh City',
+        country: 'VN',
+      },
+      paymentMethod: 'COD',
+    }),
+  });
+
+  const result = await parseResponse(response);
+  localStorage.removeItem(CART_STORAGE_KEY);
+  return result;
+}
+
 export {
   ORDERING_BASE_URL,
   CART_STORAGE_KEY,
@@ -86,4 +111,5 @@ export {
   getCart,
   getOrCreateCart,
   addProductToCart,
+  checkoutCart,
 };

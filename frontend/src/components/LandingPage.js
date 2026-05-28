@@ -1,6 +1,6 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import CatalogList from './catalog/CatalogList';
-import { addProductToCart, formatVnd, getOrCreateCart } from '../utils/orderingApi';
+import { addProductToCart, checkoutCart, formatVnd, getOrCreateCart } from '../utils/orderingApi';
 
 // Dữ liệu mẫu cho sản phẩm
 const featuredProducts = [
@@ -67,6 +67,23 @@ const LandingPage = () => {
       const nextCart = await addProductToCart(currentCart.id, product);
       setCart(nextCart);
       setStatusMessage(`Đã thêm ${product.name} vào giỏ hàng`);
+    } catch (error) {
+      setStatusMessage(error.message);
+    } finally {
+      setIsCartBusy(false);
+    }
+  }
+
+  async function handleCheckout() {
+    if (!cart?.id || !cart?.items?.length) {
+      return;
+    }
+    setIsCartBusy(true);
+    try {
+      const result = await checkoutCart(cart.id);
+      setCart(null);
+      setStatusMessage(`Da tao don hang ${result.orderId} voi trang thai ${result.status}`);
+      setIsCartOpen(false);
     } catch (error) {
       setStatusMessage(error.message);
     } finally {
@@ -157,6 +174,8 @@ const LandingPage = () => {
         .cart-item-name { font-weight: 600; color: #1f2937; }
         .cart-item-meta { font-size: 13px; color: #6b7280; margin-top: 4px; }
         .cart-total { margin-top: 14px; padding: 12px; border-radius: 8px; background: #eef2ff; color: #1f2937; font-weight: 700; }
+        .checkout-btn { width: 100%; margin-top: 14px; padding: 12px; border: 0; border-radius: 6px; background: #111827; color: #ffffff; font-weight: 700; cursor: pointer; }
+        .checkout-btn:disabled { opacity: 0.6; cursor: not-allowed; }
         .cart-empty { color: #6b7280; }
 
         /* Responsive */
@@ -258,6 +277,9 @@ const LandingPage = () => {
                     <div className="cart-total">
                       Tổng SL: {cart.totals?.totalQuantity || 0} | Tạm tính: {formatVnd(cart.totals?.subtotal || 0)}
                     </div>
+                    <button className="checkout-btn" onClick={handleCheckout} disabled={isCartBusy}>
+                      {isCartBusy ? 'Dang checkout...' : 'Checkout COD'}
+                    </button>
                   </>
                 ) : null}
                 {!isCartBusy && !cart?.items?.length ? <p className="cart-empty">Giỏ hàng đang trống.</p> : null}

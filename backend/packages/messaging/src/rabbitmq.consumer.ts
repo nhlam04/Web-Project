@@ -11,8 +11,16 @@ export class RabbitmqConsumer {
     private readonly channel: amqp.Channel,
   ) {}
 
-  async subscribe<T>(queue: string, handler: (payload: T) => Promise<void>) {
+  async subscribe<T>(
+    queue: string,
+    handler: (payload: T) => Promise<void>,
+    bindingKeys: string[] = [],
+    exchange = process.env.EVENT_EXCHANGE ?? 'cnweb.events',
+  ) {
     await this.channel.assertQueue(queue, { durable: true });
+    for (const bindingKey of bindingKeys) {
+      await this.channel.bindQueue(queue, exchange, bindingKey);
+    }
 
     await this.channel.consume(queue, async (msg) => {
       if (!msg) return;

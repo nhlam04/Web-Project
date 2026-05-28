@@ -1,12 +1,15 @@
 const EVENT_ALIASES = {
-  OrderPlaced: 'order.created',
+  OrderPlaced: 'order.placed',
   OrderCancelled: 'order.cancelled',
-  OrderStatusUpdated: 'order.status.updated',
-  SellerOrderConfirmed: 'fulfillment.seller-order-confirmed',
-  'fulfillment.seller-confirmed': 'fulfillment.seller-order-confirmed',
-  DeliveryUpdated: 'fulfillment.status-updated',
-  'fulfillment.delivery.updated': 'fulfillment.status-updated',
-  OrderCompleted: 'fulfillment.completed',
+  OrderStatusUpdated: 'order.status_updated',
+  SellerOrderConfirmed: 'fulfillment.seller_order_confirmed',
+  'fulfillment.seller-confirmed': 'fulfillment.seller_order_confirmed',
+  'fulfillment.seller-order-confirmed': 'fulfillment.seller_order_confirmed',
+  DeliveryUpdated: 'fulfillment.delivery_updated',
+  'fulfillment.delivery.updated': 'fulfillment.delivery_updated',
+  'fulfillment.status-updated': 'fulfillment.delivery_updated',
+  OrderCompleted: 'fulfillment.order_completed',
+  'fulfillment.completed': 'fulfillment.order_completed',
 };
 
 function canonicalizeEventName(eventName) {
@@ -14,7 +17,7 @@ function canonicalizeEventName(eventName) {
 }
 
 function buildNotificationContent(eventName, payload) {
-  if (eventName === 'order.created') {
+  if (eventName === 'order.placed') {
     return {
       title: 'Order placed',
       body: `Order ${payload.orderId} was created.`,
@@ -28,28 +31,28 @@ function buildNotificationContent(eventName, payload) {
     };
   }
 
-  if (eventName === 'order.status.updated') {
+  if (eventName === 'order.status_updated') {
     return {
       title: 'Order status updated',
       body: `Order ${payload.orderId} moved to ${payload.toStatus}.`,
     };
   }
 
-  if (eventName === 'fulfillment.seller-order-confirmed') {
+  if (eventName === 'fulfillment.seller_order_confirmed') {
     return {
       title: 'Seller confirmed order',
       body: `Seller confirmed order ${payload.orderId}.`,
     };
   }
 
-  if (eventName === 'fulfillment.status-updated') {
+  if (eventName === 'fulfillment.delivery_updated') {
     return {
       title: 'Delivery update',
-      body: `Order ${payload.orderId} status is ${payload.newStatus}.`,
+      body: `Order ${payload.orderId} status is ${payload.newStatus || payload.status}.`,
     };
   }
 
-  if (eventName === 'fulfillment.completed') {
+  if (eventName === 'fulfillment.order_completed') {
     return {
       title: 'Order completed',
       body: `Order ${payload.orderId} is completed.`,

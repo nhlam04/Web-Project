@@ -5,6 +5,11 @@ from app.core.config import settings
 
 from app.db.database import engine, Base
 from app.models import user, product, catalog, chat
+from app.bootstrap import init_catalog_database
+from app.rabbitmq_consumer import start_catalog_consumer
+
+init_catalog_database()
+start_catalog_consumer()
 
 app = FastAPI(
     title=settings.PROJECT_NAME,

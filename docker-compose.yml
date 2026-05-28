@@ -1,49 +1,182 @@
 services:
-  # 1. Database MySQL 
-  mysql-server:
+  mysql:
     image: mysql:8.0
-    container_name: web-project-mysql-server-1
     environment:
-      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD}
-      MYSQL_DATABASE: ${DB_NAME}
-      MYSQL_USER: ${DB_USER}
-      MYSQL_PASSWORD: ${DB_PASS}
+      MYSQL_ROOT_PASSWORD: root
+      MYSQL_DATABASE: iam
+      MYSQL_USER: admin
+      MYSQL_PASSWORD: password123
     ports:
       - "3306:3306"
     volumes:
-      - ./infrastructure/db:/docker-entrypoint-initdb.d:z
+      - mysql-data:/var/lib/mysql
+      - ./infrastructure/db:/docker-entrypoint-initdb.d:ro
     command: --default-authentication-plugin=mysql_native_password
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-uroot", "-proot"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
 
-  # 2. Message Broker
+  postgres:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_USER: admin
+      POSTGRES_PASSWORD: password123
+      POSTGRES_DB: microservices_db
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U admin -d microservices_db"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+
   rabbitmq:
     image: rabbitmq:3-management
+    environment:
+      RABBITMQ_DEFAULT_USER: admin
+      RABBITMQ_DEFAULT_PASS: admin123
     ports:
       - "5672:5672"
       - "15672:15672"
+    healthcheck:
+      test: ["CMD", "rabbitmq-diagnostics", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
 
-  # 3. IAM Service
   iam-service:
-    build: ./backend/apps/iam-service
-    container_name: web-project-iam-service-1
-    depends_on:
-      - mysql-server
-      - rabbitmq
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    command: npm --workspace iam-service start
     environment:
-      - DB_HOST=mysql-server
-      - DB_USER=${DB_USER}
-      - DB_PASS=${DB_PASS}
-      - DB_NAME=${DB_NAME}
-      - JWT_SECRET=${JWT_SECRET}
-      - JWT_REFRESH_SECRET=${JWT_REFRESH_SECRET}
+      PORT: 3001
+      DB_HOST: mysql
+      DB_USER: admin
+      DB_PASS: password123
+      DB_NAME: iam
+      JWT_SECRET: local-dev-jwt-secret-change-me-1234567890
+      JWT_REFRESH_SECRET: local-dev-refresh-secret-change-me-1234567890
+      RABBITMQ_URL: amqp://admin:admin123@rabbitmq:5672
+      ALLOWED_ORIGINS: http://localhost:8080,http://localhost:3000
+    ports:
+      - "3001:3001"
+    depends_on:
+      mysql:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
 
-  # 4. API Gateway
+  catalog-service:
+    build: ./catalog_chat
+    environment:
+      DATABASE_URL: mysql+pymysql://admin:password123@mysql:3306/catalog
+      RABBITMQ_URL: amqp://admin:admin123@rabbitmq:5672
+      RABBITMQ_EXCHANGE: cnweb.events
+    ports:
+      - "8000:8000"
+    depends_on:
+      mysql:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
+
+  ordering-service:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    command: npm --workspace ordering-service start
+    environment:
+      PORT: 8083
+      DB_HOST: postgres
+      DB_PORT: 5432
+      DB_USER: admin
+      DB_PASS: password123
+      DB_NAME: microservices_db
+      RABBITMQ_URL: amqp://admin:admin123@rabbitmq:5672
+      RABBITMQ_EXCHANGE: cnweb.events
+      IAM_BASE_URL: http://iam-service:3001
+      ORDERING_AUTH_REQUIRED: "false"
+    ports:
+      - "8083:8083"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
+
+  fulfillment-service:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    command: npm run dev:fulfillment
+    environment:
+      PORT: 3002
+      DB_HOST: mysql
+      DB_PORT: 3306
+      DB_USER: admin
+      DB_PASSWORD: password123
+      DB_NAME: fulfillment
+      TYPEORM_SYNCHRONIZE: "true"
+      RABBITMQ_URL: amqp://admin:admin123@rabbitmq:5672
+      EVENT_EXCHANGE: cnweb.events
+    ports:
+      - "3002:3002"
+    depends_on:
+      mysql:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
+
+  notification-service:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    command: npm --workspace notification-service start
+    environment:
+      PORT: 8086
+      DB_HOST: postgres
+      DB_PORT: 5432
+      DB_USER: admin
+      DB_PASS: password123
+      DB_NAME: microservices_db
+      RABBITMQ_URL: amqp://admin:admin123@rabbitmq:5672
+      RABBITMQ_EXCHANGE: cnweb.events
+    ports:
+      - "8086:8086"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
+
+  frontend:
+    build:
+      context: ./frontend
+      args:
+        REACT_APP_ORDERING_URL: /api/ordering
+        REACT_APP_CATALOG_URL: /api/catalog
+    ports:
+      - "3000:80"
+
   api-gateway:
     image: nginx:alpine
-    container_name: web-project-api-gateway-1
     ports:
-      - "80:80"
+      - "8080:80"
     volumes:
       - ./infrastructure/api-gateway/nginx.conf:/etc/nginx/nginx.conf:ro
-      - ./infrastructure/api-gateway/html:/usr/share/nginx/html:ro  
     depends_on:
+      - frontend
       - iam-service
+      - catalog-service
+      - ordering-service
+      - fulfillment-service
+      - notification-service
+
+volumes:
+  mysql-data:
+  postgres-data:

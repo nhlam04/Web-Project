@@ -32,6 +32,7 @@ export class OrderPlacedConsumer implements OnModuleInit {
           `Created ${fulfillments.length} fulfillment(s) for order ${event.payload.orderId}`,
         );
       },
+      ['order.placed'],
     );
     this.logger.log(`Subscribed to queue: ${QUEUES.ORDER_PLACED}`);
   }

@@ -17,6 +17,6 @@ export default new DataSource({
   migrations: isTsNode
     ? ['apps/fulfillment-service/src/database/migrations/*.ts']
     : ['dist/apps/fulfillment-service/src/database/migrations/*.js'],
-  synchronize: false,
+  synchronize: process.env.TYPEORM_SYNCHRONIZE === 'true',
   logging: true,
 });

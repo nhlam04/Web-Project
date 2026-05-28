@@ -18,7 +18,9 @@ CREATE TABLE IF NOT EXISTS users (
     id CHAR(36) PRIMARY KEY,
     username VARCHAR(50) UNIQUE NOT NULL,
     password_hash TEXT NOT NULL,
-    role VARCHAR(20) DEFAULT 'USER'
+    role VARCHAR(20) DEFAULT 'USER',
+    failed_login_attempts INT DEFAULT 0,
+    locked_until DATETIME NULL
 );
 
 CREATE TABLE IF NOT EXISTS roles (
@@ -41,3 +43,19 @@ CREATE TABLE IF NOT EXISTS outbox_events (
     payload JSON,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
+
+CREATE TABLE IF NOT EXISTS audit_logs (
+    id VARCHAR(36) PRIMARY KEY,
+    user_id VARCHAR(36),
+    event_type VARCHAR(50) NOT NULL,
+    event_action VARCHAR(100) NOT NULL,
+    ip_address VARCHAR(45),
+    user_agent TEXT,
+    request_data JSON,
+    response_status INT,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    INDEX idx_audit_user_id (user_id),
+    INDEX idx_audit_event_type (event_type),
+    INDEX idx_audit_created_at (created_at),
+    FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE SET NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;

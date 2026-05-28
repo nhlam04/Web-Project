@@ -18,7 +18,7 @@ const config = {
   },
   rabbitmq: {
     url: process.env.RABBITMQ_URL || 'amqp://admin:admin123@localhost:5672',
-    exchange: process.env.RABBITMQ_EXCHANGE || 'ecommerce.events',
+    exchange: process.env.RABBITMQ_EXCHANGE || 'cnweb.events',
     exchangeType: process.env.RABBITMQ_EXCHANGE_TYPE || 'topic',
   },
   consumer: {
@@ -31,7 +31,7 @@ const config = {
     prefetch: Number(process.env.NOTIFICATION_CONSUMER_PREFETCH || 20),
     reconnectIntervalMs: Number(process.env.NOTIFICATION_CONSUMER_RECONNECT_MS || 5000),
     maxAttempts: Number(process.env.NOTIFICATION_CONSUMER_MAX_ATTEMPTS || 5),
-    dlqExchange: process.env.NOTIFICATION_CONSUMER_DLQ_EXCHANGE || 'ecommerce.events.dlq',
+    dlqExchange: process.env.NOTIFICATION_CONSUMER_DLQ_EXCHANGE || 'cnweb.events.dlq',
     dlqQueue: process.env.NOTIFICATION_CONSUMER_DLQ_QUEUE || 'notification.events.dlq',
   },
 };

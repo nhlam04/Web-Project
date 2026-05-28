@@ -3,6 +3,8 @@ const mysql = require('mysql2/promise');
 const rateLimit = require('express-rate-limit');
 const helmet = require('helmet');
 const cors = require('cors');
+const { setPool: setAuditPool, logAudit, getClientIp, getUserAgent } = require('./audit');
+const { validateUsername, validateRefreshToken, validateRequiredFields } = require('./validation');
 const app = express();
 
 // ============================================
@@ -53,8 +55,6 @@ app.get('/health', async (req, res) => {
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 const { v4: uuidv4 } = require('uuid');
-const { setPool: setAuditPool, logAudit, getClientIp, getUserAgent } = require('./audit');
-const { validateUsername, validatePassword, validateRefreshToken, validateRequiredFields } = require('./validation');
 
 // ============================================
 // FIX 1: JWT Secret Validation

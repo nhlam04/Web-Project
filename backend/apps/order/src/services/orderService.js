@@ -79,11 +79,20 @@ async function createOrderFromCart({ cartId, userId, shippingAddress, paymentMet
 
     await store.markCartCheckedOut(cartId, createdAt, client);
 
+    const payload = buildOrderCreatedPayload(order);
     await store.pushOutboxEvent(
       {
         aggregateId: order.id,
-        eventType: "order.created",
-        payload: buildOrderCreatedPayload(order),
+        eventType: "OrderPlaced",
+        payload: {
+          eventId: randomUUID(),
+          eventType: "OrderPlaced",
+          aggregateId: order.id,
+          occurredAt: createdAt,
+          producer: "ordering-service",
+          version: 1,
+          payload,
+        },
       },
       client,
     );
@@ -135,8 +144,16 @@ async function cancelOrder(orderId, reason = "Cancelled by user") {
     await store.pushOutboxEvent(
       {
         aggregateId: next.id,
-        eventType: "order.cancelled",
-        payload: buildOrderCancelledPayload(next, reason, cancelledAt),
+        eventType: "OrderCancelled",
+        payload: {
+          eventId: randomUUID(),
+          eventType: "OrderCancelled",
+          aggregateId: next.id,
+          occurredAt: cancelledAt,
+          producer: "ordering-service",
+          version: 1,
+          payload: buildOrderCancelledPayload(next, reason, cancelledAt),
+        },
       },
       client,
     );
@@ -224,32 +241,33 @@ async function applyFulfillmentEvent(event, client) {
 
     let nextOrder;
 
-    if (normalizedEventType === "fulfillment.seller-order-confirmed") {
+    if (normalizedEventType === "fulfillment.seller_order_confirmed") {
       nextOrder = await transitionOrderStatus(data.orderId, ORDER_STATUS.SELLER_CONFIRMED, {
         by: "FULFILLMENT_SERVICE",
         reason: "Seller confirmed order",
         sourceEventType: normalizedEventType,
       }, transactionClient);
-    } else if (normalizedEventType === "fulfillment.status-updated") {
-      if (data.newStatus === "CONFIRMED") {
+    } else if (normalizedEventType === "fulfillment.delivery_updated") {
+      const fulfillmentStatus = data.newStatus || data.status;
+      if (fulfillmentStatus === "CONFIRMED") {
         nextOrder = await transitionOrderStatus(data.orderId, ORDER_STATUS.SELLER_CONFIRMED, {
           by: "FULFILLMENT_SERVICE",
           reason: "Seller confirmed order",
           sourceEventType: normalizedEventType,
         }, transactionClient);
-      } else if (data.newStatus === "SHIPPED" || data.deliveryStatus === "IN_TRANSIT") {
+      } else if (fulfillmentStatus === "SHIPPED" || data.deliveryStatus === "IN_TRANSIT") {
         nextOrder = await transitionOrderStatus(data.orderId, ORDER_STATUS.IN_DELIVERY, {
           by: "FULFILLMENT_SERVICE",
           reason: "Delivery is in transit",
           sourceEventType: normalizedEventType,
         }, transactionClient);
-      } else if (data.newStatus === "DELIVERED" || data.deliveryStatus === "DELIVERED") {
+      } else if (fulfillmentStatus === "DELIVERED" || data.deliveryStatus === "DELIVERED") {
         nextOrder = await transitionOrderStatus(data.orderId, ORDER_STATUS.DELIVERED, {
           by: "FULFILLMENT_SERVICE",
           reason: "Delivery completed to customer",
           sourceEventType: normalizedEventType,
         }, transactionClient);
-      } else if (data.newStatus === "COMPLETED") {
+      } else if (fulfillmentStatus === "COMPLETED") {
         nextOrder = await transitionOrderStatus(data.orderId, ORDER_STATUS.COMPLETED, {
           by: "FULFILLMENT_SERVICE",
           reason: "Order completed by fulfillment",
@@ -258,7 +276,7 @@ async function applyFulfillmentEvent(event, client) {
       } else {
         nextOrder = await getOrder(data.orderId, transactionClient);
       }
-    } else if (normalizedEventType === "fulfillment.completed") {
+    } else if (normalizedEventType === "fulfillment.order_completed") {
       nextOrder = await transitionOrderStatus(data.orderId, ORDER_STATUS.COMPLETED, {
         by: "FULFILLMENT_SERVICE",
         reason: "Order completed by fulfillment",

@@ -60,13 +60,20 @@ function startOutboxPublisher() {
           exchangeName,
           routingKey,
           Buffer.from(
-            JSON.stringify({
-              eventId: event.id,
-              eventName: event.eventType,
-              aggregateId: event.aggregateId,
-              occurredAt: event.createdAt,
-              payload: event.payload,
-            }),
+            JSON.stringify(
+              event.payload && event.payload.eventId
+                ? event.payload
+                : {
+                    eventId: event.id,
+                    eventType: event.eventType,
+                    eventName: event.eventType,
+                    aggregateId: event.aggregateId,
+                    occurredAt: event.createdAt,
+                    producer: "ordering-service",
+                    version: 1,
+                    payload: event.payload,
+                  },
+            ),
           ),
           { contentType: "application/json", persistent: true },
         );

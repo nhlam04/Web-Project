@@ -155,7 +155,7 @@ function startFulfillmentConsumer() {
           }
 
           try {
-            await orderService.applyFulfillmentEvent(event, CONSUMER_NAME);
+            await orderService.applyFulfillmentEvent(event);
             channel.ack(msg);
           } catch (err) {
             const nextAttempt = getAttemptCount(msg) + 1;
