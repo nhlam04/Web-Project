@@ -4,6 +4,7 @@ import LandingPage from '../components/LandingPage';
 import ProductList from '../components/catalog/ProductList';
 import ProductDetail from '../components/catalog/ProductDetail';
 import CatalogProductList from '../components/catalog/CatalogProductList';
+import ChatWidget from '../components/chat/ChatWidget';
 
 function App() {
   return (
@@ -14,6 +15,7 @@ function App() {
         <Route path="/product-detail/:slug" element={<ProductDetail />} />
         <Route path="/catalogs/:catalogId" element={<CatalogProductList />} />
       </Routes>
+      <ChatWidget />
     </Router>
   );
 }

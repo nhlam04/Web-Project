@@ -1,7 +1,8 @@
+from typing import List
 from fastapi import APIRouter, WebSocket, WebSocketDisconnect
 import json
-from app.services.chat_service import manager, save_message
-from app.schemas.chat import MessageCreate
+from app.services.chat_service import manager, save_message, get_messages
+from app.schemas.chat import MessageCreate, MessageResponse
 
 router = APIRouter()
 
@@ -20,6 +21,21 @@ async def websocket_endpoint(websocket: WebSocket, user_id: str):
             )
             
             await save_message(message)
-            await manager.send_personal_message(data, message.receiver_id)
+            
+            # Create a response dict including sender_id so receiver knows who sent it
+            response_data = {
+                "sender_id": user_id,
+                "receiver_id": message.receiver_id,
+                "content": message.content
+            }
+            await manager.send_personal_message(json.dumps(response_data), message.receiver_id)
     except WebSocketDisconnect:
-        manager.disconnect(user_id)
+        manager.disconnect(websocket, user_id)
+
+@router.get("/history/{user1_id}/{user2_id}", response_model=List[MessageResponse])
+async def get_chat_history(user1_id: str, user2_id: str, limit: int = 50):
+    """
+    Retrieve chat history between two users.
+    """
+    messages = await get_messages(user1_id, user2_id, limit)
+    return messages
