@@ -1,13 +1,4 @@
-# IAM Service - Week 7 Security Improvements
-
-## 📋 Đã Fix (4/4)
-
-1. ✅ **Account Lockout** - Khóa account sau 5 lần sai password (15 phút)
-2. ✅ **Audit Logging** - Log tất cả security events vào database
-3. ✅ **Input Validation** - Validate username, password, token
-4. ✅ **Security Headers** - Helmet + CORS protection
-
-**Security Score**: 4/10 → 9/10 ⭐
+# IAM Service 
 
 ## 🚀 Deployment Steps
 
@@ -46,29 +37,3 @@ ALLOWED_ORIGINS=http://localhost:3000
 ```bash
 npm start
 ```
-
-## 🧪 Quick Test
-
-```bash
-# Health check
-curl http://localhost:3001/health
-
-# Test account lockout: Login sai 5 lần → bị khóa
-# Test audit: Check audit_logs table có data
-# Test validation: Username ngắn/password yếu → reject
-```
-
-## 🔄 Rollback
-
-```bash
-# Restore database
-mysql -u admin -p iam < backup.sql
-
-# Restart service
-npm start
-```
-
-## 📦 Files Changed
-
-**New**: `audit.js`, `validation.js`, 2 migrations  
-**Modified**: `server.js`, `package.json`, `.env.example`
