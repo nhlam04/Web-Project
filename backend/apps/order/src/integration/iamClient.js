@@ -12,7 +12,7 @@ async function verifyAccessToken(token) {
     throw unauthorizedError("Missing access token");
   }
 
-  const response = await fetch(`${config.iam.baseUrl}/api/auth/me`, {
+  const response = await fetch(`${config.iam.baseUrl.replace(/\/$/, "")}/me`, {
     headers: {
       Authorization: `Bearer ${token}`,
     },
@@ -34,6 +34,7 @@ async function verifyAccessToken(token) {
   return {
     userId: user.id,
     username: user.username || null,
+    role: user.role || null,
   };
 }
 

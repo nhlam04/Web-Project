@@ -25,6 +25,9 @@ const config = {
     baseUrl: process.env.IAM_BASE_URL || "http://localhost:3001",
     authRequired: process.env.ORDERING_AUTH_REQUIRED === "true",
   },
+  catalog: {
+    baseUrl: process.env.CATALOG_BASE_URL || "http://localhost:8000",
+  },
   outboxPublisher: {
     enabled: process.env.OUTBOX_PUBLISHER_ENABLED !== "false",
     pollIntervalMs: Number(process.env.OUTBOX_PUBLISHER_POLL_MS || 3000),

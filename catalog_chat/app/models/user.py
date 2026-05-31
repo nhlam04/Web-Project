@@ -27,4 +27,3 @@ class User(Base):
     totalPrice = Column(Integer, nullable=False, default=0)
 
     role = relationship("Role", back_populates="users")
-    products = relationship("Product", back_populates="shop")

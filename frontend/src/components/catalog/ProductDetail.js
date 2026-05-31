@@ -1,6 +1,11 @@
 import React, { useEffect, useState } from 'react';
-import { useNavigate, useParams } from 'react-router-dom';
-import { addProductToCart, formatVnd, getOrCreateCart } from '../../utils/orderingApi';
+import { Link, useNavigate, useParams } from 'react-router-dom';
+import { formatVnd } from '../../utils/orderingApi';
+import { useCart } from '../cart/CartProvider';
+import PageShell from '../shared/PageShell';
+import { Button, Card } from '../shared/designSystem';
+import { useAuth } from '../auth/AuthProvider';
+import ProductReviews from '../reviews/ProductReviews';
 
 const CATALOG_BASE_URL = process.env.REACT_APP_CATALOG_URL || 'http://127.0.0.1:8000';
 
@@ -13,7 +18,8 @@ const ProductDetail = () => {
   const [quantity, setQuantity] = useState(1);
   const [mainImage, setMainImage] = useState('');
   const [statusMessage, setStatusMessage] = useState('');
-  const [isCartBusy, setIsCartBusy] = useState(false);
+  const { addProduct, isBusy: isCartBusy } = useCart();
+  const auth = useAuth();
 
   useEffect(() => {
     if (productId) {
@@ -57,7 +63,7 @@ const ProductDetail = () => {
       }
       data.detailDesc = parsedDesc;
     } catch (_error) {
-      setStatusMessage('Khong the tai chi tiet san pham.');
+      setStatusMessage('Không thể tải chi tiết sản phẩm.');
     } finally {
       setLoading(false);
     }
@@ -68,44 +74,59 @@ const ProductDetail = () => {
       return;
     }
 
-    setIsCartBusy(true);
     try {
-      const cart = await getOrCreateCart();
-      await addProductToCart(cart.id, product, quantity);
-      setStatusMessage(`Da them ${product.name} vao gio hang`);
+      await addProduct(product, quantity);
+      setStatusMessage('');
     } catch (error) {
       setStatusMessage(error.message);
-    } finally {
-      setIsCartBusy(false);
     }
   };
 
   if (loading) {
     return (
-      <div style={{ textAlign: 'center', padding: '100px', fontSize: '18px' }}>
-        Dang tai thong tin san pham...
-      </div>
+      <PageShell title="Chi tiết sản phẩm" actions={[{ label: 'Catalog', to: '/' }, { label: 'Tất cả sản phẩm', to: '/product-list' }]}>
+        <div className="ops-card ops-muted">Đang tải thông tin sản phẩm...</div>
+      </PageShell>
     );
   }
 
   if (!product) {
     return (
-      <div style={{ textAlign: 'center', padding: '100px', fontSize: '18px' }}>
-        Khong tim thay san pham.
-      </div>
+      <PageShell title="Chi tiết sản phẩm" actions={[{ label: 'Catalog', to: '/' }, { label: 'Tất cả sản phẩm', to: '/product-list' }]}>
+        <div className="ops-card ops-muted">Không tìm thấy sản phẩm.</div>
+      </PageShell>
     );
   }
 
   return (
-    <>
+    <PageShell
+      title={product.name}
+      subtitle={`Giá: ${formatVnd(Number(product.price))}`}
+      actions={[
+        { label: 'Tất cả sản phẩm', to: '/product-list' },
+        ...(auth.isCustomer ? [{ label: 'Đơn hàng', to: '/orders' }] : []),
+      ]}
+      context={(
+        <div className="ops-grid">
+          <div className="ops-kpi">
+            <span className="ops-muted">Tồn kho</span>
+            <strong>{product.quantity}</strong>
+          </div>
+          <div className="ops-kpi">
+            <span className="ops-muted">Đã bán</span>
+            <strong>{product.sold || 0}</strong>
+          </div>
+        </div>
+      )}
+    >
       <style>{`
-        .detail-container { max-width: 1200px; margin: 0 auto; padding: 40px 20px; font-family: 'Segoe UI', Tahoma, sans-serif; color: #333; }
+        .detail-container { width: 100%; margin: 0 auto; padding: 18px 0 40px; font-family: 'Segoe UI', Tahoma, sans-serif; color: #333; }
         .back-btn { background: none; border: none; color: #4b5563; font-size: 16px; cursor: pointer; display: inline-flex; align-items: center; margin-bottom: 30px; padding: 0; transition: color 0.2s; }
         .back-btn:hover { color: #4f46e5; }
         .back-btn span { margin-right: 8px; font-size: 20px; }
         .status-message { margin: 0 0 20px; padding: 10px 14px; border-radius: 8px; background-color: #ecfeff; color: #0f766e; border: 1px solid #99f6e4; }
 
-        .product-wrapper { display: flex; flex-wrap: wrap; gap: 50px; background: white; padding: 40px; border-radius: 16px; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05), 0 2px 4px -1px rgba(0,0,0,0.03); }
+        .product-wrapper { display: flex; flex-wrap: wrap; gap: clamp(24px, 4vw, 50px); background: white; padding: clamp(20px, 4vw, 40px); border-radius: 8px; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05), 0 2px 4px -1px rgba(0,0,0,0.03); }
         .images-section { flex: 1; min-width: 300px; }
         .main-img-container { width: 100%; height: 450px; border-radius: 12px; overflow: hidden; margin-bottom: 20px; border: 1px solid #f3f4f6; background-color: #f9fafb; display: flex; align-items: center; justify-content: center; }
         .main-img-container img { max-width: 100%; max-height: 100%; object-fit: contain; }
@@ -132,7 +153,7 @@ const ProductDetail = () => {
         .add-cart-btn:disabled { opacity: 0.6; cursor: not-allowed; }
         .stock-info { font-size: 14px; color: #6b7280; margin-top: 15px; }
 
-        .details-tab { margin-top: 50px; background: white; padding: 40px; border-radius: 16px; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05); }
+        .details-tab { margin-top: 32px; background: white; padding: clamp(20px, 4vw, 40px); border-radius: 8px; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05); }
         .details-tab h3 { font-size: 24px; margin-bottom: 20px; color: #111827; border-bottom: 2px solid #eef2ff; padding-bottom: 10px; display: inline-block; }
         .desc-content { line-height: 1.8; color: #4b5563; }
 
@@ -159,7 +180,7 @@ const ProductDetail = () => {
 
       <div className="detail-container">
         <button className="back-btn" onClick={() => navigate(-1)}>
-          <span>←</span> Quay lai danh sach
+          <span>&larr;</span> Quay lại danh sách
         </button>
 
         {statusMessage ? <div className="status-message">{statusMessage}</div> : null}
@@ -192,46 +213,61 @@ const ProductDetail = () => {
                 {'★'.repeat(product.StarCount || 5)}{'☆'.repeat(5 - (product.StarCount || 5))}
               </span>
               <span>•</span>
-              <span>{product.totalRates} Danh gia</span>
+              <span>{product.totalRates} Đánh giá</span>
               <span>•</span>
-              <span>Da ban {product.sold}</span>
+              <span>Đã bán {product.sold}</span>
             </div>
 
             <div className="product-price">{formatVnd(Number(product.price))}</div>
 
             <p className="short-desc">{product.shortDesc}</p>
 
-            <div className="actions-box">
-              <div className="quantity-selector">
-                <button
-                  className="quantity-btn"
-                  onClick={() => setQuantity((value) => Math.max(1, value - 1))}
-                >−</button>
-                <input
-                  type="number"
-                  className="quantity-input"
-                  value={quantity}
-                  onChange={(event) => setQuantity(Math.max(1, parseInt(event.target.value, 10) || 1))}
-                  min="1"
-                  max={product.quantity}
-                />
-                <button
-                  className="quantity-btn"
-                  onClick={() => setQuantity((value) => Math.min(product.quantity, value + 1))}
-                >+</button>
-              </div>
+            {auth.isCustomer ? (
+              <div className="actions-box">
+                <div className="quantity-selector">
+                  <button
+                    className="quantity-btn"
+                    onClick={() => setQuantity((value) => Math.max(1, value - 1))}
+                  >-</button>
+                  <input
+                    type="number"
+                    className="quantity-input"
+                    value={quantity}
+                    onChange={(event) => setQuantity(Math.max(1, parseInt(event.target.value, 10) || 1))}
+                    min="1"
+                    max={product.quantity}
+                  />
+                  <button
+                    className="quantity-btn"
+                    onClick={() => setQuantity((value) => Math.min(product.quantity, value + 1))}
+                  >+</button>
+                </div>
 
-              <button className="add-cart-btn" onClick={handleAddToCart} disabled={isCartBusy}>
-                <svg width="20" height="20" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z" /></svg>
-                {isCartBusy ? 'Dang xu ly...' : 'Them vao gio hang'}
-              </button>
-              <div className="stock-info">San pham co san: {product.quantity}</div>
-            </div>
+                <button className="add-cart-btn" onClick={handleAddToCart} disabled={isCartBusy}>
+                  <svg width="20" height="20" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z" /></svg>
+                  {isCartBusy ? 'Đang xử lý...' : 'Thêm vào giỏ hàng'}
+                </button>
+                <div className="stock-info">Sản phẩm có sẵn: {product.quantity}</div>
+              </div>
+            ) : null}
+            {auth.isGuest ? (
+              <Card className="ops-stack">
+                <h3>Đăng nhập để mua hàng</h3>
+                <p className="ops-muted">Vui lòng đăng nhập để thêm sản phẩm vào giỏ hàng.</p>
+                <div className="ops-actions">
+                  <Button as={Link} to="/login">Đăng nhập</Button>
+                  <Button as={Link} variant="secondary" to="/register">Đăng ký</Button>
+                </div>
+              </Card>
+            ) : null}
+            {auth.isSeller ? (
+              <Card><p className="ops-muted">Tài khoản SELLER có thể xem catalog nhưng không có thao tác mua hàng.</p></Card>
+            ) : null}
           </div>
         </div>
 
         <div className="details-tab">
-          <h3>Thong so ky thuat va mo ta chi tiet</h3>
+          <h3>Thông số kỹ thuật và mô tả chi tiết</h3>
           <div className="desc-content">
             {typeof product.detailDesc === 'string'
               ? <div dangerouslySetInnerHTML={{ __html: product.detailDesc.replace(/\n/g, '<br/>') }} />
@@ -260,9 +296,11 @@ const ProductDetail = () => {
             }
           </div>
         </div>
+        <ProductReviews productId={productId} />
       </div>
-    </>
+    </PageShell>
   );
 };
 
 export default ProductDetail;
+

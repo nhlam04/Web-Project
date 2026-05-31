@@ -27,9 +27,11 @@ export const EXCHANGE = process.env.EVENT_EXCHANGE ?? 'cnweb.events';
 
 export const QUEUES = {
   ORDER_PLACED: 'fulfillment.order_placed.q',
+  ORDER_CANCELLED: 'fulfillment.order_cancelled.q',
 };
 
 export const ROUTING_KEYS = {
+  ORDER_CANCELLED: 'order.cancelled',
   SELLER_ORDER_CONFIRMED: 'fulfillment.seller_order_confirmed',
   DELIVERY_UPDATED: 'fulfillment.delivery_updated',
   ORDER_COMPLETED: 'fulfillment.order_completed',

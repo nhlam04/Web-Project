@@ -17,6 +17,7 @@ import {
   DELIVERY_UPDATED_EVENT,
   ORDER_COMPLETED_EVENT,
   OrderCompletedPayload,
+  OrderCancelledPayload,
   OrderPlacedPayload,
   SELLER_ORDER_CONFIRMED_EVENT,
   SellerOrderConfirmedPayload,
@@ -101,6 +102,46 @@ export class FulfillmentService {
       });
 
       return fulfillments;
+    });
+  }
+
+  async cancelFromOrderCancelled(
+    eventId: string,
+    payload: OrderCancelledPayload,
+    consumerName: string,
+  ): Promise<FulfillmentEntity[]> {
+    return this.dataSource.transaction(async (manager) => {
+      const processed = await manager.findOne(ProcessedMessageEntity, {
+        where: { consumerName, messageId: eventId },
+      });
+      if (processed) {
+        this.logger.warn(`Duplicate OrderCancelled event ${eventId}, skipping`);
+        return [];
+      }
+
+      const fulfillments = await manager.find(FulfillmentEntity, {
+        where: { orderId: payload.orderId },
+      });
+      const cancelled: FulfillmentEntity[] = [];
+      const now = new Date();
+
+      for (const fulfillment of fulfillments) {
+        const currentStatus = fulfillment.status as FulfillmentStatus;
+        if (!ALLOWED_TRANSITIONS[currentStatus]?.includes('CANCELLED')) {
+          continue;
+        }
+
+        fulfillment.status = 'CANCELLED';
+        fulfillment.cancelledAt = now;
+        cancelled.push(await manager.save(FulfillmentEntity, fulfillment));
+      }
+
+      await manager.save(ProcessedMessageEntity, {
+        consumerName,
+        messageId: eventId,
+      });
+
+      return cancelled;
     });
   }
 

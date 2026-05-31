@@ -18,7 +18,7 @@ const CatalogList = () => {
       setLoading(true);
       const response = await fetch(`${CATALOG_BASE_URL}/api/v1/catalogs/`);
       if (!response.ok) {
-        throw new Error('Khong the tai danh muc');
+        throw new Error('Không thể tải danh mục');
       }
       const data = await response.json();
       setCatalogs(data);
@@ -30,20 +30,20 @@ const CatalogList = () => {
   };
 
   if (loading) {
-    return <div className="catalog-loading">Dang tai danh muc...</div>;
+    return <div className="catalog-loading">Đang tải danh mục...</div>;
   }
 
   if (error) {
-    return <div className="catalog-error">Loi: {error}</div>;
+    return <div className="catalog-error">Lỗi: {error}</div>;
   }
 
   return (
     <div className="catalog-container">
       <style>{`
         .catalog-container {
-          max-width: 1200px;
+          max-width: var(--app-content-max);
           margin: 0 auto;
-          padding: 40px 20px;
+          padding: var(--app-section-gap) var(--app-page-pad);
           font-family: 'Segoe UI', Tahoma, sans-serif;
         }
         .catalog-header {
@@ -101,12 +101,12 @@ const CatalogList = () => {
       `}</style>
 
       <div className="catalog-header">
-        <h2 className="catalog-title">Danh Muc San Pham</h2>
-        <p className="catalog-subtitle">Kham pha cac san pham theo danh muc</p>
+        <h2 className="catalog-title">Danh mục sản phẩm</h2>
+        <p className="catalog-subtitle">Khám phá các sản phẩm theo danh mục</p>
       </div>
 
       {catalogs.length === 0 ? (
-        <div style={{ textAlign: 'center', color: '#6b7280' }}>Chua co danh muc nao.</div>
+        <div style={{ textAlign: 'center', color: '#6b7280' }}>Chưa có danh mục nào.</div>
       ) : (
         <div className="catalog-grid">
           {catalogs.map((catalog) => (
@@ -114,7 +114,7 @@ const CatalogList = () => {
               key={catalog.id}
               className="catalog-card"
               onClick={() => navigate(`/catalogs/${catalog.id}`)}
-              title={`Xem cac san pham trong ${catalog.product_type}`}
+              title={`Xem các sản phẩm trong ${catalog.product_type}`}
             >
               <div className="catalog-name">{catalog.product_type}</div>
             </div>

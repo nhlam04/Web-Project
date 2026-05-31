@@ -1,9 +1,9 @@
+import os
 from sqlalchemy.orm import Session
 
 from app.db.database import Base, engine
 from app.models.catalog import Catalog
 from app.models.product import Product
-from app.models.user import Role, User
 from app.services.product_service import ensure_projection_table
 
 
@@ -12,24 +12,7 @@ def init_catalog_database():
     db = Session(bind=engine)
     try:
         ensure_projection_table(db)
-        if db.query(Role).count() == 0:
-            db.add(Role(id=1, name="SELLER", description="Demo seller"))
-        if db.query(User).count() == 0:
-            db.add(
-                User(
-                    id=1,
-                    username="demo-seller",
-                    password="demo",
-                    fullName="Demo Seller",
-                    gmail="seller@example.test",
-                    address="HCM",
-                    phone="0900000000",
-                    accountType="SELLER",
-                    avatar="",
-                    roleId=1,
-                    totalPrice=0,
-                )
-            )
+        seed_seller_id = os.getenv("CATALOG_SEED_SELLER_ID", "00000000-0000-0000-0000-000000000000")
         if db.query(Catalog).count() == 0:
             db.add_all(
                 [
@@ -48,7 +31,7 @@ def init_catalog_database():
                         detailDesc={"description": "Noise cancelling headphones"},
                         quantity=20,
                         sold=0,
-                        shopId=1,
+                        shopId=seed_seller_id,
                         images=["https://images.unsplash.com/photo-1505740420928-5e560c06d30e?w=500&q=80"],
                         ranking=0,
                         totalComments=0,
@@ -64,7 +47,7 @@ def init_catalog_database():
                         detailDesc={"description": "Sport watch"},
                         quantity=15,
                         sold=0,
-                        shopId=1,
+                        shopId=seed_seller_id,
                         images=["https://images.unsplash.com/photo-1523275335684-37898b6baf30?w=500&q=80"],
                         ranking=0,
                         totalComments=0,

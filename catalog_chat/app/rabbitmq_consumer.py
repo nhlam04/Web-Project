@@ -6,7 +6,12 @@ import time
 import pika
 
 from app.db.database import SessionLocal
-from app.services.product_service import apply_order_completed, apply_order_placed
+from app.services.product_service import (
+    apply_order_cancelled,
+    apply_order_completed,
+    apply_order_placed,
+    apply_review_created,
+)
 
 
 def start_catalog_consumer():
@@ -30,7 +35,9 @@ def _run_consumer():
             channel.exchange_declare(exchange=exchange, exchange_type="topic", durable=True)
             channel.queue_declare(queue=queue, durable=True)
             channel.queue_bind(queue=queue, exchange=exchange, routing_key="order.placed")
+            channel.queue_bind(queue=queue, exchange=exchange, routing_key="order.cancelled")
             channel.queue_bind(queue=queue, exchange=exchange, routing_key="fulfillment.order_completed")
+            channel.queue_bind(queue=queue, exchange=exchange, routing_key="review.created")
 
             def callback(ch, method, _properties, body):
                 try:
@@ -40,8 +47,12 @@ def _run_consumer():
                     try:
                         if event.get("eventType") == "OrderPlaced":
                             apply_order_placed(db, event["eventId"], payload.get("items", []))
+                        elif event.get("eventType") == "OrderCancelled":
+                            apply_order_cancelled(db, event["eventId"], payload.get("items", []))
                         elif event.get("eventType") == "OrderCompleted":
                             apply_order_completed(db, event["eventId"], payload.get("items", []))
+                        elif event.get("eventType") == "ReviewCreated":
+                            apply_review_created(db, event["eventId"], payload)
                     finally:
                         db.close()
                     ch.basic_ack(delivery_tag=method.delivery_tag)
