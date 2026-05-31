@@ -8,7 +8,7 @@ class ProductBase(BaseModel):
     detailDesc: Any  # JSON field
     quantity: int
     sold: int = 0
-    shopId: int
+    shopId: str
     images: Any  # JSON field
     ranking: int = 0
     totalComments: int = 0
@@ -26,7 +26,7 @@ class ProductUpdate(BaseModel):
     detailDesc: Optional[Any] = None
     quantity: Optional[int] = None
     sold: Optional[int] = None
-    shopId: Optional[int] = None
+    shopId: Optional[str] = None
     images: Optional[Any] = None
     ranking: Optional[int] = None
     totalComments: Optional[int] = None

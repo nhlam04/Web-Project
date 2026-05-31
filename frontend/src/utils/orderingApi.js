@@ -1,15 +1,30 @@
+import { formatPrice } from './formatters';
+
 const ORDERING_BASE_URL = process.env.REACT_APP_ORDERING_URL || 'http://localhost:8083';
 const CART_STORAGE_KEY = 'ordering_cart_id';
 const DEMO_USER_ID = 'user-demo-001';
+const USER_STORAGE_KEY = 'auth_user';
+
+function getOrderingUserId() {
+  const raw = localStorage.getItem(USER_STORAGE_KEY);
+  if (!raw) {
+    return DEMO_USER_ID;
+  }
+  try {
+    return JSON.parse(raw)?.id || DEMO_USER_ID;
+  } catch (_error) {
+    return DEMO_USER_ID;
+  }
+}
 
 function formatVnd(value) {
-  return new Intl.NumberFormat('vi-VN').format(value) + 'đ';
+  return formatPrice(value);
 }
 
 async function parseResponse(response) {
   const payload = await response.json().catch(() => ({}));
   if (!response.ok) {
-    const message = payload?.error?.message || 'Khong the ket noi Ordering Service';
+    const message = payload?.error?.message || 'Không thể kết nối Ordering Service';
     throw new Error(message);
   }
   return payload.data;
@@ -19,7 +34,7 @@ async function createCart() {
   const response = await fetch(`${ORDERING_BASE_URL}/api/v1/carts`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ userId: DEMO_USER_ID, currency: 'VND' }),
+    body: JSON.stringify({ userId: getOrderingUserId(), currency: 'VND' }),
   });
 
   const cart = await parseResponse(response);
@@ -68,10 +83,28 @@ async function addProductToCart(cartId, product, quantity = 1) {
     body: JSON.stringify({
       productId: String(product.id || product.productId),
       sellerId: resolveSellerId(product),
-      name: product.name || 'Unknown item',
+      name: product.name || 'Sản phẩm không rõ',
       quantity,
       unitPrice: resolveUnitPrice(product),
     }),
+  });
+
+  return parseResponse(response);
+}
+
+async function updateCartItemQuantity(cartId, productId, quantity) {
+  const response = await fetch(`${ORDERING_BASE_URL}/api/v1/carts/${cartId}/items/${encodeURIComponent(productId)}`, {
+    method: 'PATCH',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ quantity }),
+  });
+
+  return parseResponse(response);
+}
+
+async function removeCartItem(cartId, productId) {
+  const response = await fetch(`${ORDERING_BASE_URL}/api/v1/carts/${cartId}/items/${encodeURIComponent(productId)}`, {
+    method: 'DELETE',
   });
 
   return parseResponse(response);
@@ -82,15 +115,15 @@ async function checkoutCart(cartId) {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({
-      userId: DEMO_USER_ID,
+      userId: getOrderingUserId(),
       cartId,
       shippingAddress: {
-        recipientName: 'Demo User',
+        recipientName: 'Người dùng demo',
         phone: '0900000000',
         line1: '123 Nguyen Trai',
-        ward: 'Ward 1',
-        district: 'District 1',
-        city: 'Ho Chi Minh City',
+        ward: 'Phường 1',
+        district: 'Quận 1',
+        city: 'Thành phố Hồ Chí Minh',
         country: 'VN',
       },
       paymentMethod: 'COD',
@@ -106,10 +139,13 @@ export {
   ORDERING_BASE_URL,
   CART_STORAGE_KEY,
   DEMO_USER_ID,
+  getOrderingUserId,
   formatVnd,
   createCart,
   getCart,
   getOrCreateCart,
   addProductToCart,
+  updateCartItemQuantity,
+  removeCartItem,
   checkoutCart,
 };

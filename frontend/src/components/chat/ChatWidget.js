@@ -2,6 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 
 const CHAT_API_BASE_URL = process.env.REACT_APP_CHAT_API_URL || 'http://localhost:8000';
 const CHAT_WS_BASE_URL = process.env.REACT_APP_CHAT_WS_URL || 'ws://localhost:8000';
+const USERS_API_BASE_URL = process.env.REACT_APP_AUTH_URL || '/api/auth';
 
 const ChatWidget = () => {
   const [isOpen, setIsOpen] = useState(false);
@@ -12,6 +13,7 @@ const ChatWidget = () => {
   const [isConnected, setIsConnected] = useState(false);
   const [inputValue, setInputValue] = useState('');
   const [isLoadingUsers, setIsLoadingUsers] = useState(false);
+  const [loadError, setLoadError] = useState('');
   
   const ws = useRef(null);
   const messagesEndRef = useRef(null);
@@ -23,22 +25,37 @@ const ChatWidget = () => {
     }
   }, [messages, isOpen]);
 
-  // Load danh sách user
+  // Tải danh sách user
   useEffect(() => {
     if (isOpen && users.length === 0 && !isLoadingUsers) {
       setIsLoadingUsers(true);
-      fetch(`${CHAT_API_BASE_URL}/api/v1/users/`)
-        .then(res => res.json())
+      setLoadError('');
+      fetch(`${USERS_API_BASE_URL}/users`)
+        .then(res => {
+          if (!res.ok) {
+            throw new Error('Chat users API unavailable');
+          }
+          return res.json();
+        })
         .then(data => {
-          setUsers(data || []);
-          if (data && data.length > 0) {
-            setCurrentUser(data[0]);
-            setSelectedUser(data.length > 1 ? data[1] : data[0]);
+          const normalized = Array.isArray(data) ? data : (Array.isArray(data?.data) ? data.data : []);
+          setUsers(normalized);
+          if (normalized.length > 0) {
+            setCurrentUser(normalized[0]);
+            setSelectedUser(normalized.length > 1 ? normalized[1] : normalized[0]);
+          } else {
+            setCurrentUser(null);
+            setSelectedUser(null);
+            setLoadError('Chat tạm thời không khả dụng.');
           }
           setIsLoadingUsers(false);
         })
         .catch(err => {
-          console.error("Lỗi fetch users:", err);
+          console.error("Lỗi tải users:", err);
+          setUsers([]);
+          setCurrentUser(null);
+          setSelectedUser(null);
+          setLoadError('Chat tạm thời không khả dụng.');
           setIsLoadingUsers(false);
         });
     }
@@ -58,7 +75,7 @@ const ChatWidget = () => {
           console.error("Lỗi lấy lịch sử chat");
         }
       } catch (error) {
-        console.error("Error fetching history:", error);
+        console.error("Lỗi tải lịch sử chat:", error);
       }
     };
 
@@ -86,7 +103,7 @@ const ChatWidget = () => {
           const data = JSON.parse(event.data);
           setMessages(prev => [...prev, { ...data, timestamp: new Date().toISOString() }]);
         } catch (e) {
-          console.error("Error parsing message", e);
+          console.error("Lỗi phân tích tin nhắn", e);
         }
       };
 
@@ -144,6 +161,8 @@ const ChatWidget = () => {
       (String(msg.sender_id) === String(selectedUser?.id) && String(msg.receiver_id) === String(currentUser?.id))
   );
 
+  const canChat = Boolean(currentUser && selectedUser && !loadError);
+
   return (
     <div className="fixed bottom-6 right-6 z-50 font-sans">
       {/* Khung chat popup */}
@@ -159,11 +178,11 @@ const ChatWidget = () => {
             </div>
             <div>
               <h3 className="font-semibold m-0 leading-tight">
-                {selectedUser ? selectedUser.username : 'Support'}
+                {selectedUser ? selectedUser.username : 'Hỗ trợ'}
               </h3>
               <div className="flex items-center gap-1.5 mt-0.5 text-xs text-blue-100">
                 <span className={`w-2 h-2 rounded-full ${isConnected ? 'bg-green-400' : 'bg-red-400 animate-pulse'}`}></span>
-                {isConnected ? 'Online' : 'Đang kết nối...'}
+                {isConnected ? 'Trực tuyến' : 'Đang kết nối...'}
               </div>
             </div>
           </div>
@@ -201,7 +220,11 @@ const ChatWidget = () => {
 
         {/* Message List */}
         <div className="flex-1 overflow-y-auto p-4 bg-gray-50/50 flex flex-col gap-3">
-          {activeMessages.length === 0 ? (
+          {loadError ? (
+            <div className="flex-1 flex flex-col items-center justify-center text-gray-400 text-sm">
+              <span>{loadError}</span>
+            </div>
+          ) : activeMessages.length === 0 ? (
             <div className="flex-1 flex flex-col items-center justify-center text-gray-400 text-sm">
               <svg className="w-12 h-12 mb-2 opacity-20" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" /></svg>
               <span>Chưa có tin nhắn nào</span>
@@ -234,11 +257,11 @@ const ChatWidget = () => {
               value={inputValue}
               onChange={(e) => setInputValue(e.target.value)}
               onKeyDown={handleKeyPress}
-              disabled={!isConnected || !selectedUser}
+              disabled={!isConnected || !canChat}
             />
             <button 
               type="submit" 
-              disabled={!isConnected || !inputValue.trim() || !selectedUser}
+              disabled={!isConnected || !inputValue.trim() || !canChat}
               className="w-9 h-9 rounded-full bg-blue-600 text-white flex items-center justify-center flex-shrink-0 hover:bg-blue-700 disabled:bg-gray-300 disabled:cursor-not-allowed transition-all mb-0.5 mr-0.5 shadow-sm"
             >
               <svg className="w-4 h-4 ml-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8" /></svg>

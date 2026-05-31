@@ -56,6 +56,14 @@ function buildOrderCancelledPayload(order, reason, cancelledAt) {
     customerId: order.userId,
     reason,
     cancelledAt,
+    items: order.items.map((item) => ({
+      productId: item.productId,
+      sellerId: item.sellerId,
+      name: item.name,
+      quantity: item.quantity,
+      unitPrice: item.unitPrice,
+      lineTotal: item.lineTotal,
+    })),
   };
 }
 

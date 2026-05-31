@@ -100,6 +100,7 @@ services:
       RABBITMQ_URL: amqp://admin:admin123@rabbitmq:5672
       RABBITMQ_EXCHANGE: cnweb.events
       IAM_BASE_URL: http://iam-service:3001
+      CATALOG_BASE_URL: http://catalog-service:8000
       ORDERING_AUTH_REQUIRED: "false"
       ALLOWED_ORIGINS: http://localhost:8080,http://localhost:3000
     ports:
@@ -133,6 +134,29 @@ services:
       rabbitmq:
         condition: service_healthy
 
+  review-service:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    command: npm run dev:review
+    environment:
+      PORT: 3003
+      DB_HOST: mysql
+      DB_PORT: 3306
+      DB_USER: admin
+      DB_PASSWORD: password123
+      DB_NAME: review
+      TYPEORM_SYNCHRONIZE: "true"
+      RABBITMQ_URL: amqp://admin:admin123@rabbitmq:5672
+      EVENT_EXCHANGE: cnweb.events
+    ports:
+      - "3003:3003"
+    depends_on:
+      mysql:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
+
   notification-service:
     build:
       context: ./backend
@@ -158,12 +182,25 @@ services:
       rabbitmq:
         condition: service_healthy
 
+  adminer:
+    image: adminer:latest
+    ports:
+      - "8081:8080"
+    depends_on:
+      mysql:
+        condition: service_healthy
+      postgres:
+        condition: service_healthy
+
   frontend:
     build:
       context: ./frontend
       args:
         REACT_APP_ORDERING_URL: /api/ordering
         REACT_APP_CATALOG_URL: /api/catalog
+        REACT_APP_AUTH_URL: /api/auth
+        REACT_APP_FULFILLMENT_URL: /api/fulfillment
+        REACT_APP_NOTIFICATION_URL: /api/notification
     ports:
       - "3000:80"
 
@@ -179,6 +216,7 @@ services:
       - catalog-service
       - ordering-service
       - fulfillment-service
+      - review-service
       - notification-service
 
 volumes:

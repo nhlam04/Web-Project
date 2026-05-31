@@ -6,5 +6,6 @@ export const QUEUES = {
 };
 
 export const ROUTING_KEYS = {
+  ORDER_COMPLETED: 'fulfillment.order_completed',
   REVIEW_CREATED: 'review.created',
 };

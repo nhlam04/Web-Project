@@ -2,6 +2,7 @@ const { randomUUID } = require("crypto");
 const store = require("../store/memoryStore");
 const { ORDER_STATUS, assertCanTransition } = require("../domain/orderStateMachine");
 const { recalculateTotals } = require("./cartService");
+const { validateCartItems } = require("../integration/catalogClient");
 const {
   buildOrderCancelledPayload,
   buildOrderCreatedPayload,
@@ -49,6 +50,8 @@ async function createOrderFromCart({ cartId, userId, shippingAddress, paymentMet
       err.code = "EMPTY_CART";
       throw err;
     }
+
+    await validateCartItems(cart.items);
 
     const totals = recalculateTotals(cart.items);
     const createdAt = new Date().toISOString();

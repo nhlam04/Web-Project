@@ -3,7 +3,7 @@ import { RabbitmqConsumer } from '@backend/messaging';
 import { BaseEvent } from '@backend/common';
 import { OrderCompletedPayload } from '@backend/contracts';
 import { ReviewsService } from '../reviews/reviews.service';
-import { QUEUES } from '../../shared/constants';
+import { QUEUES, ROUTING_KEYS } from '../../shared/constants';
 
 @Injectable()
 export class OrderCompletedConsumer implements OnModuleInit {
@@ -33,6 +33,7 @@ export class OrderCompletedConsumer implements OnModuleInit {
           `Created ${created} review eligibility record(s) for order ${event.payload.orderId}`,
         );
       },
+      [ROUTING_KEYS.ORDER_COMPLETED],
     );
     this.logger.log(`Subscribed to queue: ${QUEUES.ORDER_COMPLETED}`);
   }

@@ -1,5 +1,6 @@
 export * from './events/order-created.event';
 export * from './events/order-placed.event';
+export * from './events/order-cancelled.event';
 export * from './events/fulfillment-completed.event';
 export * from './events/fulfillment-status-updated.event';
 export * from './events/seller-order-confirmed.event';

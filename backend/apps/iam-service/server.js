@@ -24,6 +24,7 @@ app.use(cors(corsOptions));
 app.use(express.json());
 
 const PORT = process.env.PORT || 3001;
+const ALLOWED_ACCOUNT_ROLES = new Set(['CUSTOMER', 'SELLER']);
 
 // Tạo kết nối (Pool) tới MySQL
 const pool = mysql.createPool({
@@ -38,6 +39,11 @@ const pool = mysql.createPool({
 // Initialize audit logger with pool
 setAuditPool(pool);
 
+async function ensureIamSchema() {
+    await pool.query("ALTER TABLE users MODIFY role VARCHAR(20) DEFAULT 'CUSTOMER'");
+    await pool.query("UPDATE users SET role = 'CUSTOMER' WHERE role IS NULL OR role = '' OR role = 'USER'");
+}
+
 // API Kiểm tra trạng thái & DB
 app.get('/health', async (req, res) => {
     try {
@@ -49,6 +55,16 @@ app.get('/health', async (req, res) => {
         });
     } catch (error) {
         res.status(500).json({ status: 'DOWN', error: error.message });
+    }
+});
+
+// Demo chat user list (IAM is the source of truth).
+app.get('/users', async (req, res) => {
+    try {
+        const [rows] = await pool.query('SELECT id, username, role FROM users ORDER BY username');
+        res.status(200).json({ data: rows });
+    } catch (error) {
+        res.status(500).json({ error: error.message });
     }
 });
 
@@ -109,6 +125,7 @@ const registerLimiter = rateLimit({
 // -----------------------------------------
 app.post('/register', registerLimiter, async (req, res) => {
     const { username, password } = req.body;
+    const requestedRole = String(req.body.role || 'CUSTOMER').toUpperCase();
     
     // Validate required fields
     const fieldsCheck = validateRequiredFields(req.body, ['username', 'password']);
@@ -151,6 +168,18 @@ app.post('/register', registerLimiter, async (req, res) => {
         });
         return res.status(400).json({ error: passwordCheck.error });
     }
+
+    if (!ALLOWED_ACCOUNT_ROLES.has(requestedRole)) {
+        await logAudit({
+            eventType: 'AUTH',
+            eventAction: 'REGISTER_FAILED',
+            ipAddress: getClientIp(req),
+            userAgent: getUserAgent(req),
+            requestData: { username: usernameCheck.sanitized, role: requestedRole, reason: 'Invalid role' },
+            responseStatus: 400
+        });
+        return res.status(400).json({ error: 'Loai tai khoan khong hop le' });
+    }
     
     // Mở một kết nối riêng để chạy Transaction
     const conn = await pool.getConnection();
@@ -179,13 +208,13 @@ app.post('/register', registerLimiter, async (req, res) => {
 
         // 2. Lưu user vào DB
         await conn.query(
-            'INSERT INTO users (id, username, password_hash) VALUES (?, ?, ?)', 
-            [userId, sanitizedUsername, hashedPassword]
+            'INSERT INTO users (id, username, password_hash, role) VALUES (?, ?, ?, ?)', 
+            [userId, sanitizedUsername, hashedPassword, requestedRole]
         );
 
         // 3. Tạo sự kiện và lưu vào bảng Outbox
         const eventId = uuidv4();
-        const payload = JSON.stringify({ userId, username: sanitizedUsername, action: 'UserCreated' });
+        const payload = JSON.stringify({ userId, username: sanitizedUsername, role: requestedRole, action: 'UserCreated' });
         
         await conn.query(
             'INSERT INTO outbox_events (id, event_type, payload) VALUES (?, ?, ?)',
@@ -201,11 +230,11 @@ app.post('/register', registerLimiter, async (req, res) => {
             eventAction: 'REGISTER_SUCCESS',
             ipAddress: getClientIp(req),
             userAgent: getUserAgent(req),
-            requestData: { username: sanitizedUsername },
+            requestData: { username: sanitizedUsername, role: requestedRole },
             responseStatus: 201
         });
         
-        res.status(201).json({ message: 'Đăng ký thành công và đã ghi nhận sự kiện!', userId });
+        res.status(201).json({ message: 'Dang ky thanh cong va da ghi nhan su kien!', userId, role: requestedRole });
     } catch (error) {
         await conn.rollback(); // Có lỗi xảy ra, hủy bỏ mọi thay đổi
         await logAudit({
@@ -223,7 +252,7 @@ app.post('/register', registerLimiter, async (req, res) => {
 });
 
 // -----------------------------------------
-// 2. API Đăng nhập (Login) - WITH ACCOUNT LOCKOUT
+// 2. API Đăng nhập (Login) - ACCOUNT LOCKOUT DISABLED (TEMP)
 // -----------------------------------------
 app.post('/login', authLimiter, async (req, res) => {
     const { username, password } = req.body;
@@ -274,86 +303,23 @@ app.post('/login', authLimiter, async (req, res) => {
 
         const user = users[0];
 
-        // ============================================
-        // FIX: CHECK ACCOUNT LOCKOUT
-        // ============================================
-        if (user.locked_until) {
-            const now = new Date();
-            const lockExpiry = new Date(user.locked_until);
-            
-            if (now < lockExpiry) {
-                const remainingMinutes = Math.ceil((lockExpiry - now) / 60000);
-                await logAudit({
-                    userId: user.id,
-                    eventType: 'AUTH',
-                    eventAction: 'LOGIN_BLOCKED_LOCKED',
-                    ipAddress: getClientIp(req),
-                    userAgent: getUserAgent(req),
-                    requestData: { username, remainingMinutes },
-                    responseStatus: 403
-                });
-                return res.status(403).json({ 
-                    error: `Tài khoản đã bị khóa. Vui lòng thử lại sau ${remainingMinutes} phút.`,
-                    locked_until: user.locked_until
-                });
-            } else {
-                // Lockout expired, reset
-                await pool.query(
-                    'UPDATE users SET failed_login_attempts = 0, locked_until = NULL WHERE id = ?',
-                    [user.id]
-                );
-            }
-        }
+        // Temporary: skip lockout checks to allow unlimited attempts in local testing.
 
         // So sánh mật khẩu
         const isValidPassword = await bcrypt.compare(password, user.password_hash);
         if (!isValidPassword) {
-            // ============================================
-            // FIX: INCREMENT FAILED ATTEMPTS
-            // ============================================
-            const newFailedAttempts = (user.failed_login_attempts || 0) + 1;
-            const maxAttempts = 5;
-            
-            if (newFailedAttempts >= maxAttempts) {
-                // Lock account for 15 minutes
-                const lockUntil = new Date(Date.now() + 15 * 60 * 1000);
-                await pool.query(
-                    'UPDATE users SET failed_login_attempts = ?, locked_until = ? WHERE id = ?',
-                    [newFailedAttempts, lockUntil, user.id]
-                );
-                await logAudit({
-                    userId: user.id,
-                    eventType: 'AUTH',
-                    eventAction: 'ACCOUNT_LOCKED',
-                    ipAddress: getClientIp(req),
-                    userAgent: getUserAgent(req),
-                    requestData: { username, attempts: newFailedAttempts },
-                    responseStatus: 403
-                });
-                return res.status(403).json({ 
-                    error: `Tài khoản đã bị khóa do nhập sai mật khẩu ${maxAttempts} lần. Vui lòng thử lại sau 15 phút.`,
-                    locked_until: lockUntil
-                });
-            } else {
-                // Increment failed attempts
-                await pool.query(
-                    'UPDATE users SET failed_login_attempts = ? WHERE id = ?',
-                    [newFailedAttempts, user.id]
-                );
-                await logAudit({
-                    userId: user.id,
-                    eventType: 'AUTH',
-                    eventAction: 'LOGIN_FAILED',
-                    ipAddress: getClientIp(req),
-                    userAgent: getUserAgent(req),
-                    requestData: { username, attempts: newFailedAttempts, reason: 'Wrong password' },
-                    responseStatus: 401
-                });
-                const remainingAttempts = maxAttempts - newFailedAttempts;
-                return res.status(401).json({ 
-                    error: `Sai tài khoản hoặc mật khẩu. Còn ${remainingAttempts} lần thử.`
-                });
-            }
+            await logAudit({
+                userId: user.id,
+                eventType: 'AUTH',
+                eventAction: 'LOGIN_FAILED',
+                ipAddress: getClientIp(req),
+                userAgent: getUserAgent(req),
+                requestData: { username, reason: 'Wrong password' },
+                responseStatus: 401
+            });
+            return res.status(401).json({
+                error: 'Sai tài khoản hoặc mật khẩu.'
+            });
         }
 
         // ============================================
@@ -631,7 +597,7 @@ const authorizeRole = (requiredRole) => {
 app.get('/me', authenticateToken, async (req, res) => {
     try {
         // req.user.userId được giải mã từ Token bởi middleware
-        const [users] = await pool.query('SELECT id, username FROM users WHERE id = ?', [req.user.userId]);
+        const [users] = await pool.query('SELECT id, username, role FROM users WHERE id = ?', [req.user.userId]);
         
         if (users.length === 0) {
             await logAudit({
@@ -738,6 +704,13 @@ async function startOutboxProcessor() {
 // Khởi động bưu tá
 startOutboxProcessor();
 
-app.listen(PORT, () => {
-    console.log(`IAM Service is running on port ${PORT}`);
-});
+ensureIamSchema()
+    .then(() => {
+        app.listen(PORT, () => {
+            console.log(`IAM Service is running on port ${PORT}`);
+        });
+    })
+    .catch((error) => {
+        console.error('Failed to initialize IAM schema:', error);
+        process.exit(1);
+    });

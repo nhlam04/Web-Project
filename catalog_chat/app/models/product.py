@@ -12,7 +12,7 @@ class Product(Base):
     detailDesc = Column(JSON, nullable=False)
     quantity = Column(Integer, nullable=False)
     sold = Column(Integer, nullable=False, default=0)
-    shopId = Column(Integer, ForeignKey("users.id"), nullable=False)
+    shopId = Column(String(36), nullable=False)
     images = Column(JSON, nullable=False)
     ranking = Column(Integer, nullable=False, default=0)
     totalComments = Column(Integer, nullable=False, default=0)
@@ -20,5 +20,4 @@ class Product(Base):
     totalRates = Column(Integer, nullable=False, default=0)
     catalog_id = Column(Integer, ForeignKey("catalog.id"), nullable=False)
 
-    shop = relationship("User", back_populates="products")
     catalog = relationship("Catalog")
