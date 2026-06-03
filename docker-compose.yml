@@ -196,11 +196,12 @@ services:
     build:
       context: ./frontend
       args:
-        REACT_APP_ORDERING_URL: /api/ordering
-        REACT_APP_CATALOG_URL: /api/catalog
-        REACT_APP_AUTH_URL: /api/auth
-        REACT_APP_FULFILLMENT_URL: /api/fulfillment
-        REACT_APP_NOTIFICATION_URL: /api/notification
+        VITE_ORDERING_URL: /api/ordering
+        VITE_CATALOG_URL: /api/catalog
+        VITE_AUTH_URL: /api/auth
+        VITE_FULFILLMENT_URL: /api/fulfillment
+        VITE_NOTIFICATION_URL: /api/notification
+        VITE_REVIEW_URL: /api/reviews
     ports:
       - "3000:80"
 

@@ -254,7 +254,9 @@ app.post('/register', registerLimiter, async (req, res) => {
 // -----------------------------------------
 // 2. API Đăng nhập (Login) - ACCOUNT LOCKOUT DISABLED (TEMP)
 // -----------------------------------------
-app.post('/login', authLimiter, async (req, res) => {
+// Local demo override: disable login rate limiting so repeated login attempts are allowed.
+// app.post('/login', authLimiter, async (req, res) => {
+app.post('/login', async (req, res) => {
     const { username, password } = req.body;
     
     // Validate required fields

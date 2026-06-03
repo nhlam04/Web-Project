@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
 import PageShell from '../shared/PageShell';
 import { register } from '../../utils/appApi';
 
@@ -30,29 +30,27 @@ const RegisterPage = () => {
     <PageShell
       title="Đăng ký"
       subtitle="Chọn Khách hàng để mua hàng hoặc Người bán để quản lý fulfillment."
-      actions={[{ label: 'Đăng nhập', to: '/login' }, { label: 'Catalog', to: '/' }]}
     >
       <form className="ops-card ops-stack" onSubmit={handleSubmit} style={{ maxWidth: 460 }}>
         {message ? <div className="ops-message">{message}</div> : null}
         {error ? <div className="ops-error">{error}</div> : null}
         <label className="ops-label">
           Tên đăng nhập
-          <input className="ops-input" value={form.username} onChange={(e) => setForm({ ...form, username: e.target.value })} required />
+          <input className="ops-input" value={form.username} onChange={(event) => setForm({ ...form, username: event.target.value })} required />
         </label>
         <label className="ops-label">
           Mật khẩu
-          <input className="ops-input" type="password" minLength={8} value={form.password} onChange={(e) => setForm({ ...form, password: e.target.value })} required />
+          <input className="ops-input" type="password" minLength={8} value={form.password} onChange={(event) => setForm({ ...form, password: event.target.value })} required />
         </label>
         <label className="ops-label">
           Loại tài khoản
-          <select className="ops-select" value={form.role} onChange={(e) => setForm({ ...form, role: e.target.value })}>
+          <select className="ops-select" value={form.role} onChange={(event) => setForm({ ...form, role: event.target.value })}>
             <option value="CUSTOMER">Khách hàng</option>
             <option value="SELLER">Người bán</option>
           </select>
         </label>
         <div className="ops-actions">
           <button className="ops-button" disabled={busy}>{busy ? 'Đang tạo...' : 'Đăng ký'}</button>
-          <Link className="ops-button secondary" to="/login">Đã có tài khoản</Link>
         </div>
       </form>
     </PageShell>

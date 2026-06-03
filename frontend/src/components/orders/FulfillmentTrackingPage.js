@@ -17,15 +17,8 @@ const FulfillmentTrackingPage = () => {
 
   return (
     <PageShell
-      title="Theo dõi giao hàng"
+      title="Theo d?i giao h?ng"
       subtitle={`Order ID: ${orderId}`}
-      actions={[{ label: 'Chi tiết đơn hàng', to: `/orders/${orderId}` }, { label: 'Đơn hàng', to: '/orders' }]}
-      context={(
-        <div className="ops-kpi">
-          <span className="ops-muted">Fulfillment</span>
-          <strong>{fulfillments.length}</strong>
-        </div>
-      )}
     >
       {error ? <ErrorState title="Không thể tải thông tin giao hàng" description={error} /> : null}
       {!fulfillments.length && !error ? <EmptyState title="Chưa có thông tin giao hàng" description="Fulfillment sẽ xuất hiện sau khi đơn hàng được đặt thành công." /> : null}

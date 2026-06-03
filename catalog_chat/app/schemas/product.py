@@ -19,6 +19,15 @@ class ProductBase(BaseModel):
 class ProductCreate(ProductBase):
     pass
 
+class SellerProductCreate(BaseModel):
+    name: str
+    price: int
+    shortDesc: str
+    detailDesc: Any
+    quantity: int
+    images: Any
+    catalog_id: int
+
 class ProductUpdate(BaseModel):
     name: Optional[str] = None
     price: Optional[int] = None
@@ -32,6 +41,15 @@ class ProductUpdate(BaseModel):
     totalComments: Optional[int] = None
     StarCount: Optional[int] = None
     totalRates: Optional[int] = None
+    catalog_id: Optional[int] = None
+
+class SellerProductUpdate(BaseModel):
+    name: Optional[str] = None
+    price: Optional[int] = None
+    shortDesc: Optional[str] = None
+    detailDesc: Optional[Any] = None
+    quantity: Optional[int] = None
+    images: Optional[Any] = None
     catalog_id: Optional[int] = None
 
 class ProductResponse(ProductBase):

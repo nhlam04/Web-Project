@@ -1,7 +1,8 @@
 import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { API_BASES } from '../../utils/constants';
 
-const CATALOG_BASE_URL = process.env.REACT_APP_CATALOG_URL || 'http://127.0.0.1:8000';
+const CATALOG_BASE_URL = API_BASES.catalog || 'http://127.0.0.1:8000';
 
 const CatalogList = () => {
   const [catalogs, setCatalogs] = useState([]);

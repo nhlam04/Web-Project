@@ -3,6 +3,7 @@ import { Link, Navigate, useLocation } from 'react-router-dom';
 import { useAuth } from './AuthProvider';
 import PageShell from '../shared/PageShell';
 import { Button, Card, ErrorState, Skeleton } from '../shared/designSystem';
+import { getRoleHomePath } from '../../utils/authRoutes';
 
 const AuthRequiredState = ({ requiredRole }) => (
   <PageShell title="Cần đăng nhập" actions={[{ label: 'Đăng nhập', to: '/login' }, { label: 'Đăng ký', to: '/register' }]}>
@@ -23,7 +24,7 @@ const AccessDeniedState = ({ requiredRole }) => (
   <PageShell title="Không có quyền truy cập" actions={[{ label: 'Trang chủ', to: '/' }, { label: 'Hồ sơ', to: '/profile' }]}>
     <ErrorState
       title="Không có quyền truy cập"
-      description={requiredRole ? `Trang này chỉ dành cho ${requiredRole}.` : 'Tài khoản hiện tại không đủ quyền truy cập trang này.'}
+      description={requiredRole ? `Trang này chỉ dành ch? ${requiredRole}.` : 'Tài khoản hiện tại không đủ quyền truy cập trang này.'}
       action={<Button as={Link} to="/">Về trang chủ</Button>}
     />
   </PageShell>
@@ -52,7 +53,7 @@ const RequireRole = ({ children, roles = [] }) => {
 const GuestOnly = ({ children }) => {
   const auth = useAuth();
   if (auth.loading) return <PageShell title="Đang tải"><Skeleton className="card" /></PageShell>;
-  if (auth.isAuthenticated) return <Navigate to="/profile" replace />;
+  if (auth.isAuthenticated) return <Navigate to={getRoleHomePath(auth.role)} replace />;
   return children;
 };
 

@@ -1,8 +1,10 @@
-const AUTH_BASE_URL = process.env.REACT_APP_AUTH_URL || '/api/auth';
-const ORDERING_BASE_URL = process.env.REACT_APP_ORDERING_URL || '/api/ordering';
-const FULFILLMENT_BASE_URL = process.env.REACT_APP_FULFILLMENT_URL || '/api/fulfillment';
-const NOTIFICATION_BASE_URL = process.env.REACT_APP_NOTIFICATION_URL || '/api/notification';
-const REVIEW_BASE_URL = process.env.REACT_APP_REVIEW_URL || '/api/reviews';
+import { API_BASES } from './constants';
+
+const AUTH_BASE_URL = API_BASES.auth;
+const ORDERING_BASE_URL = API_BASES.ordering;
+const FULFILLMENT_BASE_URL = API_BASES.fulfillment;
+const NOTIFICATION_BASE_URL = API_BASES.notification;
+const REVIEW_BASE_URL = API_BASES.review;
 
 const ACCESS_TOKEN_KEY = 'auth_access_token';
 const REFRESH_TOKEN_KEY = 'auth_refresh_token';
@@ -108,7 +110,7 @@ async function cancelOrder(orderId, reason) {
 
 async function listFulfillmentsByOrder(orderId) {
   const response = await fetch(`${FULFILLMENT_BASE_URL}/fulfillments?orderId=${encodeURIComponent(orderId)}`);
-  return parseApiResponse(response, 'Không thể tải thông tin giao hàng');
+  return parseApiResponse(response, 'Không thể tải thông tin gi?o hàng');
 }
 
 async function listSellerOrders({ sellerId = DEMO_SELLER_ID, status = '' } = {}) {

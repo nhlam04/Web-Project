@@ -65,7 +65,7 @@ const Register = () => {
     }
 
     if (!/^[a-zA-Z0-9][a-zA-Z0-9_-]*$/.test(username)) {
-      setErrorMessage('Tên tài khoản chỉ được chứa chữ cái, số, gạch dưới và gạch ngang');
+      setErrorMessage('Tên tài khoản chỉ được chứa chữ cái, số, gạch dưới và gạch ng?ng');
       setIsLoading(false);
       return;
     }
@@ -104,7 +104,7 @@ const Register = () => {
       const result = await register(username, password);
       
       if (result.success) {
-        setSuccessMessage('Đăng ký thành công! Đang chuyển đến trang đăng nhập...');
+        setSuccessMessage('Đăng ký thành công! Đang ch?yển đến trang đăng nhập...');
         setTimeout(() => {
           navigate('/login');
         }, 2000);
@@ -154,7 +154,7 @@ const Register = () => {
               autoFocus
             />
             <small className="form-hint">
-              3-30 ký tự, chỉ chữ cái, số, gạch dưới và gạch ngang
+              3-30 ký tự, chỉ chữ cái, số, gạch dưới và gạch ng?ng
             </small>
           </div>
 

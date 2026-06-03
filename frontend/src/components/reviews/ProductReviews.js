@@ -3,8 +3,43 @@ import { listProductReviews } from '../../utils/appApi';
 import { Card, ErrorState, Skeleton } from '../shared/designSystem';
 
 function renderStars(rating) {
-  const score = Math.max(0, Math.min(5, Number(rating) || 0));
-  return '★'.repeat(score) + '☆'.repeat(5 - score);
+  const score = Math.max(0, Math.min(5, Math.round(Number(rating) || 0)));
+  return Array.from({ length: 5 }, (_, index) => (
+    <span key={index} aria-hidden="true">{index < score ? '★' : '☆'}</span>
+  ));
+}
+
+function tryDecodeMojibake(text) {
+  if (!/[\u00c3\u00c2\u00c4\u00c6\u00d0\u00e2]/.test(text) || typeof TextDecoder === 'undefined') {
+    return text;
+  }
+
+  try {
+    const bytes = Uint8Array.from(Array.from(text), (char) => char.charCodeAt(0) & 0xff);
+    const decoded = new TextDecoder('utf-8', { fatal: false }).decode(bytes);
+    return decoded.includes('\uFFFD') ? text : decoded;
+  } catch (_error) {
+    return text;
+  }
+}
+
+function repairReviewText(value) {
+  if (value === null || value === undefined) return '';
+
+  let text = tryDecodeMojibake(String(value));
+
+  const replacements = [
+    [new RegExp(`Đ${'\uFFFD'}nh gi${'\uFFFD'}`, 'g'), 'Đánh giá'],
+    [new RegExp(`đ${'\uFFFD'}nh gi${'\uFFFD'}`, 'g'), 'đánh giá'],
+    [/S\?n ph\?m t\?t, giao h.ng d.ng quy tr.nh/g, 'Sản phẩm tốt, giao hàng đúng quy trình'],
+    [/S.n ph.m t.t, giao h.ng d.ng quy tr.nh/g, 'Sản phẩm tốt, giao hàng đúng quy trình'],
+  ];
+
+  replacements.forEach(([pattern, replacement]) => {
+    text = text.replace(pattern, replacement);
+  });
+
+  return text;
 }
 
 const ProductReviews = ({ productId }) => {
@@ -52,7 +87,7 @@ const ProductReviews = ({ productId }) => {
             {reviews.length ? `${reviews.length} đánh giá, trung bình ${average.toFixed(1)}/5` : 'Chưa có đánh giá nào.'}
           </p>
         </div>
-        {reviews.length ? <strong>{renderStars(Math.round(average))}</strong> : null}
+        {reviews.length ? <strong className="review-stars" aria-label={`${Math.round(average)} trên 5 sao`}>{renderStars(average)}</strong> : null}
       </div>
 
       {!reviews.length ? (
@@ -65,11 +100,11 @@ const ProductReviews = ({ productId }) => {
       {reviews.map((review) => (
         <article className="ops-card" key={review.id}>
           <div className="ops-row">
-            <strong>{renderStars(review.rating)}</strong>
+            <strong className="review-stars" aria-label={`${Number(review.rating) || 0} trên 5 sao`}>{renderStars(review.rating)}</strong>
             <span className="ops-muted ops-small">{review.createdAt ? new Date(review.createdAt).toLocaleString() : ''}</span>
           </div>
-          <p>{review.comment}</p>
-          <p className="ops-muted ops-small">Khách hàng: {review.customerId}</p>
+          <p>{repairReviewText(review.comment)}</p>
+          <p className="ops-muted ops-small">Khách hàng: {repairReviewText(review.customerId)}</p>
         </article>
       ))}
     </Card>

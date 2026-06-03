@@ -1,6 +1,7 @@
 import { formatPrice } from './formatters';
+import { API_BASES } from './constants';
 
-const ORDERING_BASE_URL = process.env.REACT_APP_ORDERING_URL || 'http://localhost:8083';
+const ORDERING_BASE_URL = API_BASES.ordering || 'http://localhost:8083';
 const CART_STORAGE_KEY = 'ordering_cart_id';
 const DEMO_USER_ID = 'user-demo-001';
 const USER_STORAGE_KEY = 'auth_user';

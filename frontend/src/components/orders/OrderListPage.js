@@ -34,19 +34,6 @@ const OrderListPage = () => {
     <PageShell
       title="Đơn hàng của tôi"
       subtitle={user ? `Tài khoản: ${user.username}` : 'Đơn hàng demo của khách'}
-      actions={[{ label: 'Catalog', to: '/' }, { label: 'Thông báo', to: '/notifications' }]}
-      context={(
-        <div className="ops-grid">
-          <div className="ops-kpi">
-            <span className="ops-muted">Tổng</span>
-            <strong>{orders.length}</strong>
-          </div>
-          <div className="ops-kpi">
-            <span className="ops-muted">Đang xử lý</span>
-            <strong>{activeOrders}</strong>
-          </div>
-        </div>
-      )}
     >
       {error ? <ErrorState title="Không thể tải đơn hàng" description={error} /> : null}
       {!user ? (

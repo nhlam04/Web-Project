@@ -1,4 +1,5 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
+import { API_BASES } from '../utils/constants';
 
 const AuthContext = createContext(null);
 
@@ -16,7 +17,7 @@ export const AuthProvider = ({ children }) => {
   const [error, setError] = useState(null);
 
   // IAM Service base URL
-  const IAM_BASE_URL = process.env.REACT_APP_IAM_URL || 'http://localhost:3001';
+  const IAM_BASE_URL = import.meta.env.VITE_IAM_URL || API_BASES.auth || 'http://localhost:3001';
 
   // Load user from localStorage on mount
   useEffect(() => {

@@ -6,8 +6,9 @@ import PageShell from '../shared/PageShell';
 import { Button, Card } from '../shared/designSystem';
 import { useAuth } from '../auth/AuthProvider';
 import ProductReviews from '../reviews/ProductReviews';
+import { API_BASES } from '../../utils/constants';
 
-const CATALOG_BASE_URL = process.env.REACT_APP_CATALOG_URL || 'http://127.0.0.1:8000';
+const CATALOG_BASE_URL = API_BASES.catalog || 'http://127.0.0.1:8000';
 
 const ProductDetail = () => {
   const { slug } = useParams();
@@ -84,16 +85,16 @@ const ProductDetail = () => {
 
   if (loading) {
     return (
-      <PageShell title="Chi tiết sản phẩm" actions={[{ label: 'Catalog', to: '/' }, { label: 'Tất cả sản phẩm', to: '/product-list' }]}>
-        <div className="ops-card ops-muted">Đang tải thông tin sản phẩm...</div>
+      <PageShell title="Chi ti?t s?n ph?m">
+        <div className="ops-card ops-muted">?ang t?i th?ng tin s?n ph?m...</div>
       </PageShell>
     );
   }
 
   if (!product) {
     return (
-      <PageShell title="Chi tiết sản phẩm" actions={[{ label: 'Catalog', to: '/' }, { label: 'Tất cả sản phẩm', to: '/product-list' }]}>
-        <div className="ops-card ops-muted">Không tìm thấy sản phẩm.</div>
+      <PageShell title="Chi ti?t s?n ph?m">
+        <div className="ops-card ops-muted">Kh?ng t?m th?y s?n ph?m.</div>
       </PageShell>
     );
   }
@@ -102,22 +103,6 @@ const ProductDetail = () => {
     <PageShell
       title={product.name}
       subtitle={`Giá: ${formatVnd(Number(product.price))}`}
-      actions={[
-        { label: 'Tất cả sản phẩm', to: '/product-list' },
-        ...(auth.isCustomer ? [{ label: 'Đơn hàng', to: '/orders' }] : []),
-      ]}
-      context={(
-        <div className="ops-grid">
-          <div className="ops-kpi">
-            <span className="ops-muted">Tồn kho</span>
-            <strong>{product.quantity}</strong>
-          </div>
-          <div className="ops-kpi">
-            <span className="ops-muted">Đã bán</span>
-            <strong>{product.sold || 0}</strong>
-          </div>
-        </div>
-      )}
     >
       <style>{`
         .detail-container { width: 100%; margin: 0 auto; padding: 18px 0 40px; font-family: 'Segoe UI', Tahoma, sans-serif; color: #333; }

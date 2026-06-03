@@ -18,20 +18,6 @@ const ProfilePage = () => {
     <PageShell
       title="Hồ sơ người dùng"
       subtitle="Thông tin tài khoản đang đăng nhập."
-      actions={[
-        ...(auth.isCustomer ? [{ label: 'Đơn hàng', to: '/orders' }] : []),
-        { label: 'Thông báo', to: '/notifications' },
-        ...(auth.isSeller ? [{ label: 'Đơn người bán', to: '/seller/orders' }] : []),
-      ]}
-      context={(
-        <div className="ops-stack">
-          <div className="ops-kpi">
-            <span className="ops-muted">Vai trò</span>
-            <strong>{user?.role || 'Khách'}</strong>
-          </div>
-          <p className="ops-muted ops-small">{user?.id || getActiveUserId()}</p>
-        </div>
-      )}
     >
       <div className="ops-grid">
         <section className="ops-card ops-stack">

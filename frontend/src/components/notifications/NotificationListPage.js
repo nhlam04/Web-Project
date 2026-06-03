@@ -53,19 +53,6 @@ const NotificationListPage = () => {
     <PageShell
       title="Thông báo"
       subtitle={`User ID: ${userId}`}
-      actions={[{ label: 'Đơn hàng', to: '/orders' }, { label: 'Hồ sơ', to: '/profile' }]}
-      context={(
-        <div className="ops-grid">
-          <div className="ops-kpi">
-            <span className="ops-muted">Tổng</span>
-            <strong>{notifications.length}</strong>
-          </div>
-          <div className="ops-kpi">
-            <span className="ops-muted">Chưa đọc</span>
-            <strong>{notifications.filter((item) => !item.readAt).length}</strong>
-          </div>
-        </div>
-      )}
     >
       {message ? <Toast>{message}</Toast> : null}
       {error ? <ErrorState title="Không thể tải thông báo" description={error} /> : null}

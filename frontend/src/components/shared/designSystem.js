@@ -117,13 +117,6 @@ const ProductCard = ({ product, onAddToCart, onOpen, busy = false, actionLabel =
         {typeof product.quantity !== 'undefined' ? (
           <div className="ds-product-meta">Tồn kho: {product.quantity}</div>
         ) : null}
-        {auth.isGuest ? (
-          <div className="ds-product-actions">
-            <Button as={Link} variant="ghost" to="/login" onClick={(event) => event.stopPropagation()} style={{ width: '100%' }}>
-              Vui lòng đăng nhập để mua
-            </Button>
-          </div>
-        ) : null}
         {auth.isCustomer && onAddToCart ? (
           <div className="ds-product-actions">
             <Button type="button" variant="ghost" onClick={handleAdd} disabled={busy} style={{ width: '100%' }}>

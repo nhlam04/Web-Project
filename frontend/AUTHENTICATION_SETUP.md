@@ -4,7 +4,7 @@
 
 ```bash
 npm install
-npm start  # Port 3000
+npm run dev  # Port 3000
 ```
 
 ## Files Created
@@ -60,7 +60,7 @@ fetch(url, {
 ## Config (.env)
 
 ```env
-REACT_APP_IAM_URL=http://localhost:3001
+VITE_IAM_URL=http://localhost:3001
 ```
 
 ## Validation Rules

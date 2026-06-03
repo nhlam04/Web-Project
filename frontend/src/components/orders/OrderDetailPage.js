@@ -52,18 +52,8 @@ const OrderDetailPage = () => {
 
   return (
     <PageShell
-      title="Chi tiết đơn hàng"
+      title="Chi ti?t ??n h?ng"
       subtitle={orderId}
-      actions={[{ label: 'Quay lại đơn hàng', to: '/orders' }, { label: 'Theo dõi giao hàng', to: `/fulfillment-tracking/${orderId}` }]}
-      context={order ? (
-        <div className="ops-stack">
-          <div className="ops-kpi">
-            <span className="ops-muted">Trạng thái</span>
-            <OrderStatusBadge status={order.status} />
-          </div>
-          <p className="ops-muted ops-small">Thanh toán: {order.paymentMethod}</p>
-        </div>
-      ) : null}
     >
       {message ? <Toast>{message}</Toast> : null}
       {error ? <ErrorState title="Không thể tải chi tiết đơn hàng" description={error} /> : null}

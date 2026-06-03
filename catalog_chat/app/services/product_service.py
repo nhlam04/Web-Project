@@ -1,13 +1,16 @@
 from sqlalchemy.orm import Session
 from sqlalchemy import text
 from app.models.product import Product
-from app.schemas.product import ProductCreate, ProductUpdate
+from app.schemas.product import ProductCreate, ProductUpdate, SellerProductCreate, SellerProductUpdate
 
 def get_product(db: Session, product_id: int):
     return db.query(Product).filter(Product.id == product_id).first()
 
 def get_products(db: Session, skip: int = 0, limit: int = 100):
     return db.query(Product).offset(skip).limit(limit).all()
+
+def get_products_by_seller(db: Session, seller_id: str, skip: int = 0, limit: int = 100):
+    return db.query(Product).filter(Product.shopId == seller_id).offset(skip).limit(limit).all()
 
 def get_products_by_catalog(db: Session, catalog_id: int, skip: int = 0, limit: int = 100):
     return db.query(Product).filter(Product.catalog_id == catalog_id).offset(skip).limit(limit).all()
@@ -19,7 +22,31 @@ def create_product(db: Session, product: ProductCreate):
     db.refresh(db_product)
     return db_product
 
+def create_seller_product(db: Session, product: SellerProductCreate, seller_id: str):
+    payload = product.model_dump()
+    db_product = Product(
+        **payload,
+        shopId=seller_id,
+        sold=0,
+        ranking=0,
+        totalComments=0,
+        StarCount=0,
+        totalRates=0,
+    )
+    db.add(db_product)
+    db.commit()
+    db.refresh(db_product)
+    return db_product
+
 def update_product(db: Session, db_product: Product, product_update: ProductUpdate):
+    update_data = product_update.model_dump(exclude_unset=True)
+    for key, value in update_data.items():
+        setattr(db_product, key, value)
+    db.commit()
+    db.refresh(db_product)
+    return db_product
+
+def update_seller_product(db: Session, db_product: Product, product_update: SellerProductUpdate):
     update_data = product_update.model_dump(exclude_unset=True)
     for key, value in update_data.items():
         setattr(db_product, key, value)

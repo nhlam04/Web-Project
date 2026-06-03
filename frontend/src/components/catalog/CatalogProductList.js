@@ -1,20 +1,14 @@
 import React, { useEffect, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import PageShell from '../shared/PageShell';
-import { Button, EmptyState, ProductCard, Select, Skeleton, Toast } from '../shared/designSystem';
+import { Button, EmptyState, Input, ProductCard, Skeleton, Toast } from '../shared/designSystem';
 import { useCart } from '../cart/CartProvider';
+import { API_BASES } from '../../utils/constants';
 
-const CATALOG_BASE_URL = process.env.REACT_APP_CATALOG_URL || 'http://127.0.0.1:8000';
+const CATALOG_BASE_URL = API_BASES.catalog || 'http://127.0.0.1:8000';
 
 const AVAILABLE_BRANDS = ['Asus', 'Dell', 'HP', 'Lenovo', 'Apple', 'Acer', 'MSI'];
 const AVAILABLE_LOCATIONS = ['Hà Nội', 'TP. Hồ Chí Minh', 'Đà Nẵng'];
-const PRICE_RANGES = [
-  { label: 'Tất cả mức giá', value: '' },
-  { label: 'Dưới 10 triệu', value: '0-10000000' },
-  { label: '10 - 20 triệu', value: '10000000-20000000' },
-  { label: '20 - 30 triệu', value: '20000000-30000000' },
-  { label: 'Trên 30 triệu', value: '30000000-999999999' },
-];
 
 const CatalogProductList = () => {
   const { catalogId } = useParams();
@@ -24,12 +18,13 @@ const CatalogProductList = () => {
   const [filteredProducts, setFilteredProducts] = useState([]);
   const [loading, setLoading] = useState(true);
   const [page, setPage] = useState(1);
-  const limit = 8;
   const [selectedBrands, setSelectedBrands] = useState([]);
-  const [selectedPrice, setSelectedPrice] = useState('');
+  const [priceFrom, setPriceFrom] = useState('');
+  const [priceTo, setPriceTo] = useState('');
   const [selectedLocations, setSelectedLocations] = useState([]);
   const [statusMessage, setStatusMessage] = useState('');
   const { addProduct, isBusy: isCartBusy } = useCart();
+  const limit = 8;
 
   useEffect(() => {
     fetchCatalogInfo();
@@ -47,16 +42,18 @@ const CatalogProductList = () => {
       result = result.filter((product) => selectedLocations.includes(product.location));
     }
 
-    if (selectedPrice) {
-      const [minStr, maxStr] = selectedPrice.split('-');
-      const min = parseInt(minStr, 10);
-      const max = parseInt(maxStr, 10);
-      result = result.filter((product) => product.price >= min && product.price <= max);
+    const min = priceFrom === '' ? null : Number(priceFrom);
+    const max = priceTo === '' ? null : Number(priceTo);
+    if (min !== null && Number.isFinite(min)) {
+      result = result.filter((product) => Number(product.price) >= min);
+    }
+    if (max !== null && Number.isFinite(max)) {
+      result = result.filter((product) => Number(product.price) <= max);
     }
 
     setFilteredProducts(result);
     setPage(1);
-  }, [allProducts, selectedBrands, selectedLocations, selectedPrice]);
+  }, [allProducts, selectedBrands, selectedLocations, priceFrom, priceTo]);
 
   const fetchCatalogInfo = async () => {
     try {
@@ -76,7 +73,6 @@ const CatalogProductList = () => {
       const response = await fetch(`${CATALOG_BASE_URL}/api/v1/catalogs/${catalogId}/products`);
       if (!response.ok) throw new Error('Không thể tải dữ liệu từ Catalog Service');
       const data = await response.json();
-
       setAllProducts(data);
       setFilteredProducts(data);
     } catch (_error) {
@@ -100,7 +96,8 @@ const CatalogProductList = () => {
 
   const clearFilters = () => {
     setSelectedBrands([]);
-    setSelectedPrice('');
+    setPriceFrom('');
+    setPriceTo('');
     setSelectedLocations([]);
   };
 
@@ -117,24 +114,12 @@ const CatalogProductList = () => {
   const totalPages = Math.ceil(filteredProducts.length / limit);
   const startIndex = (page - 1) * limit;
   const currentDisplayedProducts = filteredProducts.slice(startIndex, startIndex + limit);
+  const hasFilters = selectedBrands.length > 0 || priceFrom || priceTo || selectedLocations.length > 0;
 
   return (
     <PageShell
       title={catalog ? catalog.product_type : 'Danh mục sản phẩm'}
       subtitle={`${filteredProducts.length} sản phẩm phù hợp`}
-      actions={[{ label: 'Catalog', to: '/' }, { label: 'Tất cả sản phẩm', to: '/product-list' }]}
-      context={(
-        <div className="ops-grid">
-          <div className="ops-kpi">
-            <span className="ops-muted">Sản phẩm</span>
-            <strong>{filteredProducts.length}</strong>
-          </div>
-          <div className="ops-kpi">
-            <span className="ops-muted">Trang</span>
-            <strong>{page}</strong>
-          </div>
-        </div>
-      )}
     >
       <style>{`
         .page-container { width: 100%; margin: 0 auto; padding: 18px 0 40px; }
@@ -143,9 +128,10 @@ const CatalogProductList = () => {
         .back-btn:hover { color: #4f46e5; }
         .list-header h2 { font-size: 24px; color: #111827; margin: 0; }
         .layout-wrapper { display: flex; gap: 30px; align-items: flex-start; }
-        .sidebar { width: 260px; flex-shrink: 0; background: white; padding: 20px; border-radius: 8px; border: 1px solid #e5e7eb; }
+        .sidebar { width: 280px; flex-shrink: 0; background: white; padding: 20px; border-radius: 8px; border: 1px solid #e5e7eb; }
         .filter-section { margin-bottom: 25px; }
         .filter-section h4 { margin: 0 0 15px 0; font-size: 16px; color: #111827; border-bottom: 1px solid #f3f4f6; padding-bottom: 8px; }
+        .filter-price-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
         .filter-item { display: flex; align-items: center; gap: 10px; margin-bottom: 10px; cursor: pointer; color: #4b5563; font-size: 14px; }
         .filter-item input { cursor: pointer; accent-color: #4f46e5; width: 16px; height: 16px; }
         .main-content { flex-grow: 1; min-width: 0; }
@@ -168,22 +154,31 @@ const CatalogProductList = () => {
           <aside className="sidebar">
             <div className="filter-section">
               <h4>Mức giá</h4>
-              <Select label="Khoảng giá" value={selectedPrice} onChange={(event) => setSelectedPrice(event.target.value)}>
-                {PRICE_RANGES.map((range) => (
-                  <option key={range.value} value={range.value}>{range.label}</option>
-                ))}
-              </Select>
+              <div className="filter-price-grid">
+                <Input
+                  label="Từ"
+                  type="number"
+                  min="0"
+                  placeholder="0"
+                  value={priceFrom}
+                  onChange={(event) => setPriceFrom(event.target.value)}
+                />
+                <Input
+                  label="Đến"
+                  type="number"
+                  min="0"
+                  placeholder="5000000"
+                  value={priceTo}
+                  onChange={(event) => setPriceTo(event.target.value)}
+                />
+              </div>
             </div>
 
             <div className="filter-section">
               <h4>Thương hiệu</h4>
               {AVAILABLE_BRANDS.map((brand) => (
                 <label key={brand} className="filter-item">
-                  <input
-                    type="checkbox"
-                    checked={selectedBrands.includes(brand)}
-                    onChange={() => handleBrandChange(brand)}
-                  />
+                  <input type="checkbox" checked={selectedBrands.includes(brand)} onChange={() => handleBrandChange(brand)} />
                   {brand}
                 </label>
               ))}
@@ -193,21 +188,17 @@ const CatalogProductList = () => {
               <h4>Nơi bán</h4>
               {AVAILABLE_LOCATIONS.map((loc) => (
                 <label key={loc} className="filter-item">
-                  <input
-                    type="checkbox"
-                    checked={selectedLocations.includes(loc)}
-                    onChange={() => handleLocationChange(loc)}
-                  />
+                  <input type="checkbox" checked={selectedLocations.includes(loc)} onChange={() => handleLocationChange(loc)} />
                   {loc}
                 </label>
               ))}
             </div>
 
-            {(selectedBrands.length > 0 || selectedPrice || selectedLocations.length > 0) && (
+            {hasFilters ? (
               <Button variant="ghost" onClick={clearFilters} style={{ width: '100%' }}>
                 Xóa tất cả bộ lọc
               </Button>
-            )}
+            ) : null}
           </aside>
 
           <main className="main-content">
@@ -242,27 +233,19 @@ const CatalogProductList = () => {
                   </div>
                 )}
 
-                {totalPages > 1 && (
+                {totalPages > 1 ? (
                   <div className="pagination">
-                    <Button
-                      variant="ghost"
-                      disabled={page === 1}
-                      onClick={() => setPage(page - 1)}
-                    >
+                    <Button variant="ghost" disabled={page === 1} onClick={() => setPage(page - 1)}>
                       Trang trước
                     </Button>
                     <span style={{ padding: '8px 16px', fontWeight: 'bold' }}>
                       Trang {page} / {totalPages}
                     </span>
-                    <Button
-                      variant="ghost"
-                      onClick={() => setPage(page + 1)}
-                      disabled={page >= totalPages}
-                    >
+                    <Button variant="ghost" onClick={() => setPage(page + 1)} disabled={page >= totalPages}>
                       Trang sau
                     </Button>
                   </div>
-                )}
+                ) : null}
               </>
             )}
           </main>

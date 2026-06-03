@@ -103,14 +103,17 @@ Server FastAPI mac dinh chay o http://127.0.0.1:8000. Tai lieu Swagger: http://1
 2. Cai dat goi phu thuoc:
    ```bash
    npm install
-   npm install react-router-dom
    ```
 
 3. Chay giao dien:
    ```bash
-   npm start
+   npm run dev
    ```
 
-React Server se chay o http://localhost:3000.
+Vite dev server chạy ở http://localhost:3000.
+
+Frontend hiện được tổ chức theo kiến trúc Vite + React Router với các thư mục `src/pages`, `src/layouts`, `src/services`, `src/store` và `src/utils`. Biến môi trường phía client dùng tiền tố `VITE_`, ví dụ `VITE_CATALOG_URL=/api/catalog`.
+
+Giao diện frontend dùng font stack hỗ trợ tiếng Việt và các text hiển thị chính đã được chuẩn hóa sang tiếng Việt có dấu.
 
 Cong nghe: Node.js, MySQL, RabbitMQ, Nginx, Docker.

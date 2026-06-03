@@ -7,7 +7,7 @@ import { Button, Card, EmptyState, ErrorState, Input, OrderStatusBadge, Select, 
 const nextActions = {
   PENDING: { action: 'confirm', label: 'Xác nhận' },
   CONFIRMED: { action: 'ship', label: 'Gửi hàng' },
-  SHIPPED: { action: 'deliver', label: 'Đã giao' },
+  SHIPPED: { action: 'deliver', label: 'Đã gi?o' },
   DELIVERED: { action: 'complete', label: 'Hoàn tất' },
 };
 
@@ -127,7 +127,7 @@ const SellerOrdersPage = () => {
             <option value="">Tất cả</option>
             {statuses.map((item) => <option key={item} value={item}>{item}</option>)}
           </Select>
-          <Input label="Đơn vị vận chuyển mặc định khi gửi hàng" value={shipping.carrier} onChange={(e) => setShipping({ ...shipping, carrier: e.target.value })} />
+          <Input label="Đơn vị vận ch?yển mặc định khi gửi hàng" value={shipping.carrier} onChange={(e) => setShipping({ ...shipping, carrier: e.target.value })} />
           <Input label="Mã theo dõi khi gửi hàng" value={shipping.trackingCode} onChange={(e) => setShipping({ ...shipping, trackingCode: e.target.value })} />
           <Button onClick={loadOrders} disabled={!sellerId || loading}>{loading ? 'Đang tải...' : 'Tải danh sách'}</Button>
         </Card>
@@ -150,7 +150,7 @@ const SellerOrdersPage = () => {
                   <th>Trạng thái</th>
                   <th>Sản phẩm</th>
                   <th>Tổng</th>
-                  <th>Vận chuyển</th>
+                  <th>Vận ch?yển</th>
                   <th>Hành động tiếp theo</th>
                 </tr>
               </thead>
