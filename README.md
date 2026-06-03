@@ -116,4 +116,8 @@ Frontend hiện được tổ chức theo kiến trúc Vite + React Router với
 
 Giao diện frontend dùng font stack hỗ trợ tiếng Việt và các text hiển thị chính đã được chuẩn hóa sang tiếng Việt có dấu.
 
+## Checkout và địa chỉ giao hàng
+
+Khách hàng đi qua trang `/checkout` để cập nhật địa chỉ giao hàng trước khi đặt đơn COD. Địa chỉ này được gửi vào Ordering API trong trường `shippingAddress` và được lưu ở bảng `ordering.orders.shipping_address` để các màn danh sách/chi tiết đơn hàng hiển thị lại thông tin giao hàng.
+
 Cong nghe: Node.js, MySQL, RabbitMQ, Nginx, Docker.

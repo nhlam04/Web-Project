@@ -34,6 +34,8 @@ Gateway API prefixes:
 - `GET http://localhost:8080/api/fulfillment/seller/orders`
 - `GET http://localhost:8080/api/notification/api/v1/notifications?userId=user-demo-001`
 
+Ordering stores the checkout delivery destination in `ordering.orders.shipping_address` as JSONB. The Ordering startup migration also runs `ADD COLUMN IF NOT EXISTS shipping_address` so older local databases receive the column automatically.
+
 ## Smoke test the MVP flow by API
 
 Create a cart:
@@ -68,6 +70,8 @@ $order = Invoke-RestMethod -Method Post http://localhost:8083/api/v1/orders/chec
 } | ConvertTo-Json -Depth 5)
 $order.data
 ```
+
+The `shippingAddress` object is required and must include `recipientName`, `phone`, `line1`, `ward`, `district`, `city`, and `country`. The frontend `/checkout` page collects and reuses this address before it calls the checkout API.
 
 Wait a few seconds, then inspect created fulfillment:
 
@@ -154,8 +158,9 @@ The update endpoint returns `403` if `x-seller-id` does not match the product `s
 1. Open `http://localhost:8080`.
 2. Add a featured product to cart.
 3. Open cart.
-4. Click `Checkout COD`.
-5. Use the API commands above to inspect fulfillment, order status, and notifications.
+4. Click `Nhập địa chỉ giao hàng`.
+5. Fill the shipping address form on `/checkout`, then click `Đặt hàng COD`.
+6. Use the API commands above to inspect fulfillment, order status, shipping address, and notifications.
 
 Seller product UI:
 

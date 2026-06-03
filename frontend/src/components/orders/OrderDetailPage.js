@@ -3,6 +3,7 @@ import { Link, useParams } from 'react-router-dom';
 import PageShell from '../shared/PageShell';
 import { cancelOrder, getOrder, listFulfillmentsByOrder } from '../../utils/appApi';
 import { formatVnd } from '../../utils/orderingApi';
+import { formatShippingAddress, formatShippingRecipient } from '../../utils/shippingAddress';
 import { Button, Card, EmptyState, ErrorState, Input, OrderStatusBadge, Skeleton, Toast } from '../shared/designSystem';
 import OrderReviewPanel from '../reviews/OrderReviewPanel';
 
@@ -52,7 +53,7 @@ const OrderDetailPage = () => {
 
   return (
     <PageShell
-      title="Chi ti?t ??n h?ng"
+      title="Chi tiết đơn hàng"
       subtitle={orderId}
     >
       {message ? <Toast>{message}</Toast> : null}
@@ -71,7 +72,7 @@ const OrderDetailPage = () => {
             <div className="ops-grid">
               <div className="ops-kpi">
                 <span className="ops-muted">Tổng tiền</span>
-                <strong>{formatVnd(order.totals?.subtotal || 0)}</strong>
+                <strong>{formatVnd(order.totals?.subtotal || order.totals?.totalAmount || 0)}</strong>
               </div>
               <div className="ops-kpi">
                 <span className="ops-muted">Số lượng</span>
@@ -83,11 +84,25 @@ const OrderDetailPage = () => {
               </div>
               <div className="ops-kpi">
                 <span className="ops-muted">Ngày tạo</span>
-                <strong style={{ fontSize: 16 }}>{order.createdAt ? new Date(order.createdAt).toLocaleString() : 'N/A'}</strong>
+                <strong style={{ fontSize: 16 }}>{order.createdAt ? new Date(order.createdAt).toLocaleString('vi-VN') : 'N/A'}</strong>
               </div>
             </div>
             <div className="ops-actions">
               <Button as={Link} variant="secondary" to={`/fulfillment-tracking/${order.id}`}>Theo dõi giao hàng</Button>
+            </div>
+          </Card>
+
+          <Card className="ops-stack">
+            <h2>Địa chỉ giao hàng</h2>
+            <div className="ops-grid">
+              <div className="ops-kpi">
+                <span className="ops-muted">Người nhận</span>
+                <strong>{formatShippingRecipient(order.shippingAddress) || 'Chưa có thông tin'}</strong>
+              </div>
+              <div className="ops-kpi">
+                <span className="ops-muted">Địa chỉ</span>
+                <strong style={{ fontSize: 16 }}>{formatShippingAddress(order.shippingAddress) || 'Chưa có địa chỉ'}</strong>
+              </div>
             </div>
           </Card>
 
@@ -109,6 +124,7 @@ const OrderDetailPage = () => {
               </table>
             </div>
           </Card>
+
           <section className="ops-grid">
             <Card>
               <h3>Lịch sử trạng thái</h3>
@@ -116,7 +132,7 @@ const OrderDetailPage = () => {
                 {order.history?.map((item, index) => (
                   <li key={`${item.to}-${index}`}>
                     <strong>{item.to}</strong>
-                    <div className="ops-muted ops-small">{new Date(item.at).toLocaleString()} - {item.reason}</div>
+                    <div className="ops-muted ops-small">{new Date(item.at).toLocaleString('vi-VN')} - {item.reason}</div>
                   </li>
                 ))}
               </ul>
@@ -131,6 +147,7 @@ const OrderDetailPage = () => {
               </Card>
             ) : null}
           </section>
+
           <Card>
             <h3>Fulfillment liên quan</h3>
             {!fulfillments.length ? <EmptyState title="Chưa có fulfillment" description="Fulfillment sẽ được tạo sau khi sự kiện OrderPlaced được xử lý." /> : null}

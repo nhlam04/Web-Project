@@ -6,7 +6,7 @@ import { useCart } from '../../components/cart/CartProvider';
 import { formatPrice } from '../../utils/formatters';
 
 export default function Cart() {
-  const { cart, checkout, isBusy, refreshCart, removeItem, updateItemQuantity } = useCart();
+  const { cart, isBusy, refreshCart, removeItem, updateItemQuantity } = useCart();
   const items = cart?.items || [];
 
   useEffect(() => {
@@ -18,7 +18,7 @@ export default function Cart() {
       {!items.length ? (
         <EmptyState
           title="Giỏ hàng đang trống"
-          description="Chọn sản phẩm trong catalog để bắt đầu tạo đơn hàng."
+          description="Chọn sản phẩm trong trang sản phẩm để bắt đầu tạo đơn hàng."
           action={<Button as={Link} to="/products">Xem sản phẩm</Button>}
         />
       ) : (
@@ -54,8 +54,8 @@ export default function Cart() {
             </table>
           </div>
           <div className="ops-row">
-            <strong>Tổng: {formatPrice(cart?.totals?.totalAmount || 0)}</strong>
-            <Button onClick={checkout} disabled={isBusy}>Checkout COD</Button>
+            <strong>Tổng: {formatPrice(cart?.totals?.subtotal || cart?.totals?.totalAmount || 0)}</strong>
+            <Button as={Link} to="/checkout">Nhập địa chỉ giao hàng</Button>
           </div>
         </Card>
       )}

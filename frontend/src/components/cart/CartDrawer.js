@@ -7,7 +7,6 @@ import './cartDrawer.css';
 const CartDrawer = () => {
   const {
     cart,
-    checkout,
     closeCart,
     isBusy,
     isOpen,
@@ -16,6 +15,8 @@ const CartDrawer = () => {
   } = useCart();
 
   if (!isOpen) return null;
+
+  const hasItems = Boolean(cart?.items?.length);
 
   return (
     <div className="cart-drawer-overlay" onClick={closeCart}>
@@ -26,7 +27,7 @@ const CartDrawer = () => {
         </div>
         <div className="cart-drawer-body">
           {isBusy ? <p className="ops-muted">Đang tải giỏ hàng...</p> : null}
-          {!isBusy && cart?.items?.length ? cart.items.map((item) => (
+          {!isBusy && hasItems ? cart.items.map((item) => (
             <div className="cart-drawer-item" key={item.productId}>
               <div className="ops-row">
                 <div>
@@ -63,17 +64,23 @@ const CartDrawer = () => {
               </div>
             </div>
           )) : null}
-          {!isBusy && !cart?.items?.length ? <p className="ops-muted">Giỏ hàng đang trống.</p> : null}
-          {cart?.items?.length ? (
+          {!isBusy && !hasItems ? <p className="ops-muted">Giỏ hàng đang trống.</p> : null}
+          {hasItems ? (
             <div className="cart-drawer-total">
               Tổng SL: {cart.totals?.totalQuantity || 0} | Tạm tính: {formatVnd(cart.totals?.subtotal || 0)}
             </div>
           ) : null}
         </div>
         <div className="cart-drawer-foot">
-          <button className="ops-button" type="button" disabled={isBusy || !cart?.items?.length} onClick={checkout}>
-            {isBusy ? 'Đang xử lý...' : 'Checkout COD'}
-          </button>
+          {hasItems ? (
+            <Link className="ops-button" to="/checkout" onClick={closeCart}>
+              Nhập địa chỉ giao hàng
+            </Link>
+          ) : (
+            <button className="ops-button" type="button" disabled>
+              Nhập địa chỉ giao hàng
+            </button>
+          )}
           <Link className="ops-button secondary" to="/orders" onClick={closeCart}>Xem đơn hàng</Link>
         </div>
       </aside>

@@ -99,6 +99,9 @@ async function initDatabase() {
     ALTER TABLE ordering.outbox_events
       ADD COLUMN IF NOT EXISTS routing_key TEXT NULL;
 
+    ALTER TABLE ordering.orders
+      ADD COLUMN IF NOT EXISTS shipping_address JSONB NOT NULL DEFAULT '{}'::jsonb;
+
     CREATE INDEX IF NOT EXISTS idx_orders_user_id ON ordering.orders(user_id);
     CREATE INDEX IF NOT EXISTS idx_outbox_status_created ON ordering.outbox_events(status, created_at);
   `);

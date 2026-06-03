@@ -1,5 +1,6 @@
 import { formatPrice } from './formatters';
 import { API_BASES } from './constants';
+import { normalizeShippingAddress } from './shippingAddress';
 
 const ORDERING_BASE_URL = API_BASES.ordering || 'http://localhost:8083';
 const CART_STORAGE_KEY = 'ordering_cart_id';
@@ -111,22 +112,14 @@ async function removeCartItem(cartId, productId) {
   return parseResponse(response);
 }
 
-async function checkoutCart(cartId) {
+async function checkoutCart(cartId, shippingAddress) {
   const response = await fetch(`${ORDERING_BASE_URL}/api/v1/orders/checkout`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({
       userId: getOrderingUserId(),
       cartId,
-      shippingAddress: {
-        recipientName: 'Người dùng demo',
-        phone: '0900000000',
-        line1: '123 Nguyen Trai',
-        ward: 'Phường 1',
-        district: 'Quận 1',
-        city: 'Thành phố Hồ Chí Minh',
-        country: 'VN',
-      },
+      shippingAddress: normalizeShippingAddress(shippingAddress),
       paymentMethod: 'COD',
     }),
   });

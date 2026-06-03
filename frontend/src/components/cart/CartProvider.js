@@ -93,7 +93,7 @@ const CartProvider = ({ children }) => {
     }
   }, [auth.isCustomer, auth.isGuest, cart, clearFeedback]);
 
-  const checkout = useCallback(async () => {
+  const checkout = useCallback(async (shippingAddress) => {
     if (!auth.isCustomer) {
       const nextMessage = auth.isGuest
         ? 'Vui lòng đăng nhập để checkout.'
@@ -106,7 +106,7 @@ const CartProvider = ({ children }) => {
     setIsBusy(true);
     clearFeedback();
     try {
-      const result = await checkoutCart(cart.id);
+      const result = await checkoutCart(cart.id, shippingAddress);
       setCart(null);
       setIsOpen(false);
       setMessage(`Đã tạo đơn hàng ${result.orderId} với trạng thái ${result.status}`);

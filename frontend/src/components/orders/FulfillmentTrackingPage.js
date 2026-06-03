@@ -17,7 +17,7 @@ const FulfillmentTrackingPage = () => {
 
   return (
     <PageShell
-      title="Theo d?i giao h?ng"
+      title="Theo dõi giao hàng"
       subtitle={`Order ID: ${orderId}`}
     >
       {error ? <ErrorState title="Không thể tải thông tin giao hàng" description={error} /> : null}

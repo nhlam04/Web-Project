@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom';
 import PageShell from '../shared/PageShell';
 import { DEMO_USER_ID, getStoredUser, listOrders } from '../../utils/appApi';
 import { formatVnd } from '../../utils/orderingApi';
+import { formatShippingAddress, formatShippingRecipient } from '../../utils/shippingAddress';
 import { Button, Card, EmptyState, ErrorState, Input, OrderStatusBadge, Skeleton } from '../shared/designSystem';
 
 const OrderListPage = () => {
@@ -28,8 +29,6 @@ const OrderListPage = () => {
     loadOrders();
   }, [loadOrders]);
 
-  const activeOrders = orders.filter((order) => !['CANCELLED', 'COMPLETED'].includes(order.status)).length;
-
   return (
     <PageShell
       title="Đơn hàng của tôi"
@@ -51,7 +50,7 @@ const OrderListPage = () => {
         <Card className="ds-row" style={{ marginBottom: 16 }}>
           <div>
             <strong>{user.username}</strong>
-            <p className="ops-muted ops-small" style={{ margin: '4px 0 0' }}>Đang xem đơn hàng của tài khoản đang đăng nhập.</p>
+            <p className="ops-muted ops-small" style={{ margin: '4px 0 0' }}>Đang xem đơn hàng của tài khoản đăng nhập.</p>
           </div>
           <Button onClick={() => loadOrders(user.id)}>Tải lại</Button>
         </Card>
@@ -70,6 +69,7 @@ const OrderListPage = () => {
               <tr>
                 <th>Mã đơn</th>
                 <th>Trạng thái</th>
+                <th>Giao đến</th>
                 <th>Số lượng</th>
                 <th>Tổng tiền</th>
                 <th>Ngày tạo</th>
@@ -81,9 +81,13 @@ const OrderListPage = () => {
                 <tr key={order.id}>
                   <td>{order.id}</td>
                   <td><OrderStatusBadge status={order.status} /></td>
+                  <td>
+                    <strong>{formatShippingRecipient(order.shippingAddress) || 'Chưa có thông tin'}</strong>
+                    <div className="ops-muted ops-small">{formatShippingAddress(order.shippingAddress) || 'Chưa có địa chỉ'}</div>
+                  </td>
                   <td>{order.totals?.totalQuantity || order.items?.length || 0}</td>
-                  <td>{formatVnd(order.totals?.subtotal || 0)}</td>
-                  <td>{new Date(order.createdAt).toLocaleString()}</td>
+                  <td>{formatVnd(order.totals?.subtotal || order.totals?.totalAmount || 0)}</td>
+                  <td>{order.createdAt ? new Date(order.createdAt).toLocaleString('vi-VN') : 'N/A'}</td>
                   <td><Button as={Link} variant="secondary" to={`/orders/${order.id}`}>Chi tiết</Button></td>
                 </tr>
               ))}

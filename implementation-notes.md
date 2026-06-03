@@ -99,6 +99,9 @@
 - Added `ToastProvider`, `NotificationBell`, and a `ProtectedRoute.jsx` compatibility guard while preserving the existing `RequireAuth`, `RequireRole`, and `GuestOnly` guards.
 - Kept old customer URLs such as `/product-list` and `/product-detail/:slug` working while adding the cleaner `/products` and `/products/:slug` aliases.
 - Unified customer catalog browsing into the `/products` page. The page now combines search, price range, brand/location filters, and a category filter; legacy `/catalogs/:catalogId` redirects into `/products?catalogId=:catalogId`.
+- Added an editable customer shipping address step on `/checkout`; cart actions now route customers through this page instead of creating COD orders directly.
+- Ordering persists the submitted checkout address in `ordering.orders.shipping_address`; startup now defensively adds the JSONB column for older local databases.
+- Customer order list and order detail now render the recipient, phone number, and full shipping address saved with the order.
 
 ## Verification
 
@@ -145,6 +148,11 @@
 - `npm run build` in `frontend` succeeds after separating seller profile/notification/orders pages from the customer shell.
 - `npm run build` in `frontend` succeeds after the UTF-8 Vietnamese text/font cleanup. Vite still reports the existing non-blocking main bundle chunk-size warning.
 - `npm run build` in `frontend` succeeds after merging catalog and product listing into the unified products page.
+- `npm run build` in `frontend` succeeds after adding the editable checkout shipping address step and order address display.
+- `docker compose build frontend ordering-service` and `docker compose up -d --force-recreate frontend ordering-service` succeed after the shipping address changes.
+- Frontend smoke routes returned `200` for `http://localhost:3000/checkout`, `/cart`, `/orders`, and gateway `http://localhost:8080/checkout`.
+- Ordering health returned `200` with `db=ok`; Postgres inspection confirmed `ordering.orders.shipping_address` exists as non-null `jsonb`.
+- Checkout shipping-address smoke check created order `c59b7da3-2e3e-462b-a438-021dfb70b391`, read back `shippingAddress.line1=1 Duong Kiem Thu`, then confirmed the smoke order was cancelled for cleanup.
 
 ## Planned Remaining Work
 
