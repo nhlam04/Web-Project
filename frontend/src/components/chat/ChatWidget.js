@@ -1,14 +1,15 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { API_BASES } from '../../utils/constants';
+import { useAuthStore } from '../../store/useAuthStore';
 
 const CHAT_API_BASE_URL = API_BASES.chatHttp;
 const CHAT_WS_BASE_URL = API_BASES.chatWs;
 const USERS_API_BASE_URL = API_BASES.auth;
 
 const ChatWidget = () => {
+  const { user: currentUser } = useAuthStore();
   const [isOpen, setIsOpen] = useState(false);
   const [users, setUsers] = useState([]);
-  const [currentUser, setCurrentUser] = useState(null);
   const [selectedUser, setSelectedUser] = useState(null);
   const [messages, setMessages] = useState([]);
   const [isConnected, setIsConnected] = useState(false);
@@ -36,19 +37,18 @@ const ChatWidget = () => {
       .then((data) => {
         const normalized = Array.isArray(data) ? data : (Array.isArray(data?.data) ? data.data : []);
         setUsers(normalized);
-        setCurrentUser(normalized[0] || null);
-        setSelectedUser(normalized.length > 1 ? normalized[1] : normalized[0] || null);
+        const otherUsers = normalized.filter(u => String(u.id) !== String(currentUser?.id));
+        setSelectedUser(otherUsers.length > 0 ? otherUsers[0] : normalized[0] || null);
         if (!normalized.length) setLoadError('Chat tạm thời không khả dụng.');
       })
       .catch((err) => {
         console.error('Lỗi tải users:', err);
         setUsers([]);
-        setCurrentUser(null);
         setSelectedUser(null);
         setLoadError('Chat tạm thời không khả dụng.');
       })
       .finally(() => setIsLoadingUsers(false));
-  }, [isOpen, users.length, isLoadingUsers]);
+  }, [isOpen, users.length, isLoadingUsers, currentUser]);
 
   useEffect(() => {
     if (!currentUser || !selectedUser) return;
@@ -143,6 +143,10 @@ const ChatWidget = () => {
   ));
   const canChat = Boolean(currentUser && selectedUser && !loadError);
 
+  if (!currentUser) {
+    return null;
+  }
+
   return (
     <>
       <style>{`
@@ -201,15 +205,9 @@ const ChatWidget = () => {
 
           <div className="chat-selectors">
             <label className="chat-select-row">
-              <span>Tôi là:</span>
-              <select value={currentUser?.id || ''} onChange={(e) => setCurrentUser(users.find((u) => String(u.id) === e.target.value) || null)}>
-                {users.map((user) => <option key={user.id} value={user.id}>{user.username}</option>)}
-              </select>
-            </label>
-            <label className="chat-select-row">
               <span>Chat với:</span>
               <select value={selectedUser?.id || ''} onChange={(e) => setSelectedUser(users.find((u) => String(u.id) === e.target.value) || null)}>
-                {users.map((user) => <option key={user.id} value={user.id}>{user.username}</option>)}
+                {users.filter(u => String(u.id) !== String(currentUser.id)).map((user) => <option key={user.id} value={user.id}>{user.username}</option>)}
               </select>
             </label>
           </div>
@@ -268,3 +266,4 @@ const ChatWidget = () => {
 };
 
 export default ChatWidget;
+

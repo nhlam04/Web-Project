@@ -23,18 +23,34 @@ function App() {
       <AuthProvider>
         <CartProvider>
           <Routes>
+            {/* Root */}
             <Route path="/" element={<LandingPage />} />
+
+            {/* Product */}
             <Route path="/product-list" element={<ProductList />} />
             <Route path="/product-detail/:slug" element={<ProductDetail />} />
+
+            {/* Catalog */}
             <Route path="/catalogs/:catalogId" element={<CatalogProductList />} />
+
+            {/* IAM */}
             <Route path="/login" element={<GuestOnly><LoginPage /></GuestOnly>} />
             <Route path="/register" element={<GuestOnly><RegisterPage /></GuestOnly>} />
             <Route path="/profile" element={<RequireAuth><ProfilePage /></RequireAuth>} />
+
+            {/* Ordering */}
             <Route path="/orders" element={<RequireRole roles={['CUSTOMER']}><OrderListPage /></RequireRole>} />
             <Route path="/orders/:orderId" element={<RequireRole roles={['CUSTOMER']}><OrderDetailPage /></RequireRole>} />
+
+            {/* Fulfillment */}
             <Route path="/fulfillment-tracking/:orderId" element={<RequireRole roles={['CUSTOMER']}><FulfillmentTrackingPage /></RequireRole>} />
-            <Route path="/seller/orders" element={<RequireRole roles={['SELLER']}><SellerOrdersPage /></RequireRole>} />
+
+
+            {/* Notification */}
             <Route path="/notifications" element={<RequireAuth><NotificationListPage /></RequireAuth>} />
+
+            {/* Seller */}
+            <Route path="/seller/orders" element={<RequireRole roles={['SELLER']}><SellerOrdersPage /></RequireRole>} />
           </Routes>
           <ChatWidget />
         </CartProvider>
