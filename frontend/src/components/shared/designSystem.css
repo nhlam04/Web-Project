@@ -1,8 +1,11 @@
+/* ─── Design System Component Styles ─── */
+
+/* Buttons */
 .ds-button {
   border: 0;
-  border-radius: 6px;
+  border-radius: 8px;
   min-height: 40px;
-  padding: 10px 14px;
+  padding: 10px 16px;
   display: inline-flex;
   align-items: center;
   justify-content: center;
@@ -10,36 +13,49 @@
   color: #ffffff;
   background: #2563eb;
   font: inherit;
-  font-weight: 700;
+  font-size: 14px;
+  font-weight: 600;
   text-decoration: none;
   cursor: pointer;
-  transition: background-color 160ms ease, border-color 160ms ease, color 160ms ease, box-shadow 160ms ease;
+  transition: background-color 180ms ease, border-color 180ms ease, color 180ms ease, box-shadow 180ms ease, transform 180ms ease;
+  box-shadow: 0 1px 2px rgba(15, 23, 42, 0.06);
 }
 
 .ds-button:hover:not(:disabled) {
   background: #1d4ed8;
-  box-shadow: 0 8px 18px rgba(37, 99, 235, 0.18);
+  box-shadow: 0 6px 20px rgba(37, 99, 235, 0.22);
+  transform: translateY(-1px);
+}
+
+.ds-button:active:not(:disabled) {
+  transform: translateY(0);
+  box-shadow: 0 1px 2px rgba(15, 23, 42, 0.06);
 }
 
 .ds-button:disabled {
   cursor: not-allowed;
   opacity: 0.55;
+  transform: none;
 }
 
 .ds-button.secondary {
   color: #0f172a;
-  background: #e2e8f0;
+  background: #f1f5f9;
+  box-shadow: none;
+  border: 1px solid #e2e8f0;
 }
 
 .ds-button.secondary:hover:not(:disabled) {
-  background: #cbd5e1;
-  box-shadow: none;
+  background: #e2e8f0;
+  border-color: #cbd5e1;
+  box-shadow: 0 2px 8px rgba(15, 23, 42, 0.06);
 }
 
 .ds-button.ghost {
   color: #334155;
-  background: #ffffff;
+  background: transparent;
   border: 1px solid #cbd5e1;
+  box-shadow: none;
 }
 
 .ds-button.ghost:hover:not(:disabled) {
@@ -55,15 +71,21 @@
 
 .ds-button.danger:hover:not(:disabled) {
   background: #b91c1c;
-  box-shadow: 0 8px 18px rgba(220, 38, 38, 0.18);
+  box-shadow: 0 6px 20px rgba(220, 38, 38, 0.22);
 }
 
+/* Cards */
 .ds-card {
   background: #ffffff;
   border: 1px solid #e5e7eb;
-  border-radius: 8px;
-  padding: 18px;
-  box-shadow: 0 1px 2px rgba(15, 23, 42, 0.04);
+  border-radius: 10px;
+  padding: 20px;
+  box-shadow: 0 1px 3px rgba(15, 23, 42, 0.04), 0 1px 2px rgba(15, 23, 42, 0.02);
+  transition: box-shadow 0.22s ease, border-color 0.22s ease;
+}
+
+.ds-card:hover {
+  box-shadow: 0 4px 16px rgba(15, 23, 42, 0.07);
 }
 
 .ds-card.flush {
@@ -71,32 +93,36 @@
   overflow: hidden;
 }
 
+/* Badges */
 .ds-badge {
   display: inline-flex;
   align-items: center;
   min-height: 24px;
   width: fit-content;
-  padding: 2px 9px;
+  padding: 2px 10px;
   border-radius: 999px;
   background: #eef2ff;
   color: #3730a3;
   font-size: 12px;
-  font-weight: 800;
+  font-weight: 600;
   line-height: 1.2;
+  letter-spacing: 0.01em;
+  border: 1px solid transparent;
 }
 
-.ds-badge.neutral { background: #f1f5f9; color: #475569; }
-.ds-badge.warning { background: #fef3c7; color: #92400e; }
-.ds-badge.success { background: #dcfce7; color: #166534; }
-.ds-badge.danger { background: #fee2e2; color: #991b1b; }
-.ds-badge.info { background: #dbeafe; color: #1d4ed8; }
+.ds-badge.neutral { background: #f1f5f9; color: #475569; border-color: #e2e8f0; }
+.ds-badge.warning { background: #fffbeb; color: #92400e; border-color: #fde68a; }
+.ds-badge.success { background: #f0fdf4; color: #166534; border-color: #bbf7d0; }
+.ds-badge.danger { background: #fef2f2; color: #991b1b; border-color: #fecaca; }
+.ds-badge.info { background: #eff6ff; color: #1d4ed8; border-color: #bfdbfe; }
 
+/* Form Fields */
 .ds-field {
   display: grid;
   gap: 6px;
   color: #334155;
   font-size: 14px;
-  font-weight: 700;
+  font-weight: 600;
 }
 
 .ds-input,
@@ -104,30 +130,43 @@
   width: 100%;
   min-height: 40px;
   padding: 10px 12px;
-  border: 1px solid #cbd5e1;
-  border-radius: 6px;
+  border: 1px solid #e5e7eb;
+  border-radius: 8px;
   background: #ffffff;
   color: #0f172a;
   font: inherit;
+  font-size: 14px;
+  transition: border-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+.ds-input:hover,
+.ds-select:hover {
+  border-color: #cbd5e1;
 }
 
 .ds-input:focus,
 .ds-select:focus {
   border-color: #2563eb;
-  box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.12);
+  box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
   outline: 0;
 }
 
+.ds-input::placeholder {
+  color: #94a3b8;
+}
+
+/* Skeleton Loading */
 .ds-skeleton {
   min-height: 16px;
-  border-radius: 6px;
-  background: linear-gradient(90deg, #e2e8f0 25%, #f8fafc 37%, #e2e8f0 63%);
+  border-radius: 8px;
+  background: linear-gradient(90deg, #e2e8f0 25%, #f1f5f9 37%, #e2e8f0 63%);
   background-size: 400% 100%;
-  animation: ds-skeleton 1.2s ease-in-out infinite;
+  animation: ds-skeleton 1.4s ease-in-out infinite;
 }
 
 .ds-skeleton.card {
   min-height: 220px;
+  border-radius: 10px;
 }
 
 @keyframes ds-skeleton {
@@ -135,11 +174,12 @@
   100% { background-position: 0 50%; }
 }
 
+/* Empty / Error States */
 .ds-state {
   display: grid;
   justify-items: center;
-  gap: 10px;
-  padding: 32px 20px;
+  gap: 12px;
+  padding: 40px 24px;
   text-align: center;
   color: #64748b;
 }
@@ -148,21 +188,26 @@
   margin: 0;
   color: #0f172a;
   font-size: 18px;
-  font-weight: 800;
+  font-weight: 700;
+  letter-spacing: -0.01em;
 }
 
 .ds-state-description {
   margin: 0;
   max-width: 520px;
+  line-height: 1.6;
 }
 
+/* Toast */
 .ds-toast {
   margin-bottom: 16px;
-  padding: 10px 12px;
-  border-radius: 8px;
+  padding: 12px 14px;
+  border-radius: 10px;
   border: 1px solid #99f6e4;
   color: #0f766e;
-  background: #ecfeff;
+  background: #f0fdfa;
+  font-size: 14px;
+  line-height: 1.5;
 }
 
 .ds-toast.error {
@@ -177,6 +222,7 @@
   background: #fffbeb;
 }
 
+/* ─── Product Grid & Cards ─── */
 .ds-product-grid {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(min(100%, 240px), 1fr));
@@ -190,13 +236,13 @@
   min-height: 100%;
   overflow: hidden;
   cursor: pointer;
-  transition: transform 160ms ease, box-shadow 160ms ease, border-color 160ms ease;
+  transition: transform 200ms ease, box-shadow 200ms ease, border-color 200ms ease;
 }
 
 .ds-product-card:hover {
-  transform: translateY(-2px);
+  transform: translateY(-4px);
   border-color: #bfdbfe;
-  box-shadow: 0 12px 24px rgba(15, 23, 42, 0.08);
+  box-shadow: 0 12px 32px rgba(15, 23, 42, 0.10);
 }
 
 .ds-product-media {
@@ -210,11 +256,11 @@
   width: 100%;
   height: 100%;
   object-fit: contain;
-  transition: transform 240ms ease;
+  transition: transform 280ms ease;
 }
 
 .ds-product-card:hover .ds-product-media img {
-  transform: scale(1.04);
+  transform: scale(1.05);
 }
 
 .ds-product-body {
@@ -228,16 +274,18 @@
 .ds-product-brand {
   color: #64748b;
   font-size: 12px;
-  font-weight: 800;
+  font-weight: 700;
   text-transform: uppercase;
+  letter-spacing: 0.04em;
 }
 
 .ds-product-title {
   min-height: 44px;
   margin: 0;
   color: #111827;
-  font-size: 16px;
-  line-height: 1.35;
+  font-size: 15px;
+  font-weight: 500;
+  line-height: 1.4;
   display: -webkit-box;
   -webkit-line-clamp: 2;
   -webkit-box-orient: vertical;
@@ -248,11 +296,12 @@
   margin: 0;
   color: #2563eb;
   font-size: 18px;
-  font-weight: 900;
+  font-weight: 800;
+  letter-spacing: -0.01em;
 }
 
 .ds-product-meta {
-  color: #64748b;
+  color: #94a3b8;
   font-size: 13px;
 }
 
@@ -261,6 +310,7 @@
   margin-top: 6px;
 }
 
+/* Layout helpers */
 .ds-row {
   display: flex;
   align-items: center;
