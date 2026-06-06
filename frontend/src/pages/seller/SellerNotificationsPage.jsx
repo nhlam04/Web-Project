@@ -48,23 +48,23 @@ export default function SellerNotificationsPage() {
   }
 
   return (
-    <div className="ops-stack">
-      <header className="ops-header">
+    <div className="flex flex-col gap-6">
+      <header className="flex flex-col md:flex-row justify-between items-start md:items-end gap-4">
         <div>
-          <h1>Thông báo seller</h1>
-          <p>User ID: {userId}</p>
+          <h1 className="text-2xl font-bold text-slate-900 m-0 mb-1">Thông báo seller</h1>
+          <p className="text-slate-500 m-0">User ID: {userId}</p>
         </div>
-        <div className="ops-kpi">
-          <span className="ops-muted">Chưa đọc</span>
-          <strong>{notifications.filter((item) => !item.readAt).length}</strong>
+        <div className="flex flex-col items-end">
+          <span className="text-sm font-semibold text-slate-500 uppercase tracking-wider">Chưa đọc</span>
+          <strong className="text-2xl font-bold text-brand-600">{notifications.filter((item) => !item.readAt).length}</strong>
         </div>
       </header>
 
       {message ? <Toast>{message}</Toast> : null}
       {error ? <ErrorState title="Không thể tải thông báo" description={error} /> : null}
 
-      <Card className="ops-row">
-        <div style={{ width: 180 }}>
+      <Card className="flex flex-wrap items-end gap-4">
+        <div className="w-[180px]">
           <Select label="Bộ lọc" value={unreadOnly ? 'unread' : 'all'} onChange={(event) => setUnreadOnly(event.target.value === 'unread')}>
             <option value="all">Tất cả</option>
             <option value="unread">Chưa đọc</option>
@@ -76,18 +76,22 @@ export default function SellerNotificationsPage() {
 
       {!notifications.length ? <EmptyState title="Không có thông báo" description="Thông báo seller sẽ xuất hiện tại đây." /> : null}
 
-      <div className="ops-stack">
+      <div className="flex flex-col gap-4">
         {notifications.map((item) => (
-          <Card className="ops-stack" key={item.id}>
-            <div className="ops-row">
-              <div>
-                <h2>{item.title}</h2>
-                <p>{item.body}</p>
-                <p className="ops-muted ops-small">{item.eventName} | {new Date(item.createdAt).toLocaleString()}</p>
+          <Card className="flex flex-col gap-4" key={item.id}>
+            <div className="flex justify-between items-start gap-4">
+              <div className="flex flex-col gap-1">
+                <h2 className="text-lg font-bold text-slate-900 m-0">{item.title}</h2>
+                <p className="text-slate-700 m-0">{item.body}</p>
+                <p className="text-xs text-slate-500 mt-1">{item.eventName} | {new Date(item.createdAt).toLocaleString()}</p>
               </div>
               <Badge variant={item.readAt ? 'neutral' : 'warning'}>{item.readAt ? 'Đã đọc' : 'Chưa đọc'}</Badge>
             </div>
-            {!item.readAt ? <Button onClick={() => markOne(item.id)}>Đánh dấu đã đọc</Button> : null}
+            {!item.readAt ? (
+              <div className="pt-4 border-t border-slate-100 flex justify-end">
+                <Button onClick={() => markOne(item.id)} variant="ghost" className="text-brand-600">Đánh dấu đã đọc</Button>
+              </div>
+            ) : null}
           </Card>
         ))}
       </div>

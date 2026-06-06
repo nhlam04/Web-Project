@@ -31,93 +31,32 @@ const CatalogList = () => {
   };
 
   if (loading) {
-    return <div className="catalog-loading">Đang tải danh mục...</div>;
+    return <div className="text-center p-24 text-lg text-slate-500">Đang tải danh mục...</div>;
   }
 
   if (error) {
-    return <div className="catalog-error">Lỗi: {error}</div>;
+    return <div className="text-center p-24 text-lg text-red-500">Lỗi: {error}</div>;
   }
 
   return (
-    <div className="catalog-container">
-      <style>{`
-        .catalog-container {
-          max-width: var(--app-content-max);
-          margin: 0 auto;
-          padding: var(--app-section-gap) var(--app-page-pad);
-          font-family: 'Segoe UI', Tahoma, sans-serif;
-        }
-        .catalog-header {
-          text-align: center;
-          margin-bottom: 40px;
-        }
-        .catalog-title {
-          font-size: 32px;
-          font-weight: 700;
-          color: #111827;
-          margin-bottom: 10px;
-        }
-        .catalog-subtitle {
-          color: #6b7280;
-          font-size: 16px;
-        }
-        .catalog-grid {
-          display: grid;
-          grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
-          gap: 20px;
-        }
-        .catalog-card {
-          background: white;
-          border-radius: 12px;
-          padding: 25px 20px;
-          text-align: center;
-          box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05), 0 2px 4px -1px rgba(0,0,0,0.03);
-          border: 1px solid #f3f4f6;
-          cursor: pointer;
-          transition: all 0.3s ease;
-          display: flex;
-          flex-direction: column;
-          align-items: center;
-          justify-content: center;
-          min-height: 120px;
-        }
-        .catalog-card:hover {
-          transform: translateY(-5px);
-          box-shadow: 0 10px 15px -3px rgba(0,0,0,0.1), 0 4px 6px -2px rgba(0,0,0,0.05);
-          border-color: #4f46e5;
-        }
-        .catalog-name {
-          font-size: 18px;
-          font-weight: 600;
-          color: #374151;
-        }
-        .catalog-loading, .catalog-error {
-          text-align: center;
-          padding: 100px;
-          font-size: 18px;
-        }
-        .catalog-error {
-          color: #ef4444;
-        }
-      `}</style>
-
-      <div className="catalog-header">
-        <h2 className="catalog-title">Danh mục sản phẩm</h2>
-        <p className="catalog-subtitle">Khám phá các sản phẩm theo danh mục</p>
+    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
+      <div className="text-center mb-10">
+        <h2 className="text-3xl font-bold text-slate-900 mb-2">Danh mục sản phẩm</h2>
+        <p className="text-slate-500 text-lg">Khám phá các sản phẩm theo danh mục</p>
       </div>
 
       {catalogs.length === 0 ? (
-        <div style={{ textAlign: 'center', color: '#6b7280' }}>Chưa có danh mục nào.</div>
+        <div className="text-center text-slate-500">Chưa có danh mục nào.</div>
       ) : (
-        <div className="catalog-grid">
+        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
           {catalogs.map((catalog) => (
             <div
               key={catalog.id}
-              className="catalog-card"
+              className="bg-white rounded-xl p-6 text-center shadow-sm border border-slate-100 cursor-pointer transition-all duration-300 hover:-translate-y-1 hover:shadow-md hover:border-brand-500 flex flex-col items-center justify-center min-h-[120px]"
               onClick={() => navigate(`/catalogs/${catalog.id}`)}
               title={`Xem các sản phẩm trong ${catalog.product_type}`}
             >
-              <div className="catalog-name">{catalog.product_type}</div>
+              <div className="text-lg font-semibold text-slate-700">{catalog.product_type}</div>
             </div>
           ))}
         </div>

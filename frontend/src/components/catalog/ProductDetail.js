@@ -34,22 +34,23 @@ const ProductDetail = () => {
       const response = await fetch(`${CATALOG_BASE_URL}/api/v1/products/${productId}`);
       if (!response.ok) throw new Error('Product not found');
       const data = await response.json();
-      setProduct(data);
 
       let parsedImages = [];
       if (Array.isArray(data.images)) {
         parsedImages = data.images;
       } else if (typeof data.images === 'string') {
         try {
-          parsedImages = JSON.parse(data.images);
+          const parsed = JSON.parse(data.images);
+          parsedImages = Array.isArray(parsed) ? parsed : [data.images];
         } catch (_err) {
           parsedImages = [data.images];
         }
       }
 
-      if (parsedImages && parsedImages.length > 0) {
-        setMainImage(parsedImages[0]);
-        data.images = parsedImages;
+      data.images = Array.isArray(parsedImages) ? parsedImages : [];
+
+      if (data.images.length > 0) {
+        setMainImage(data.images[0]);
       } else {
         setMainImage('https://via.placeholder.com/500?text=No+Image');
       }
@@ -58,11 +59,11 @@ const ProductDetail = () => {
       if (typeof parsedDesc === 'string') {
         try {
           parsedDesc = JSON.parse(parsedDesc);
-        } catch (_err) {
-          // ignore parse error and keep string
-        }
+        } catch (_err) {}
       }
       data.detailDesc = parsedDesc;
+
+      setProduct(data);
     } catch (_error) {
       setStatusMessage('Không thể tải chi tiết sản phẩm.');
     } finally {
@@ -85,16 +86,16 @@ const ProductDetail = () => {
 
   if (loading) {
     return (
-      <PageShell title="Chi ti?t s?n ph?m">
-        <div className="ops-card ops-muted">?ang t?i th?ng tin s?n ph?m...</div>
+      <PageShell title="Chi tiết sản phẩm">
+        <div className="bg-white p-12 text-center rounded-xl border border-slate-200 text-slate-500">Đang tải thông tin sản phẩm...</div>
       </PageShell>
     );
   }
 
   if (!product) {
     return (
-      <PageShell title="Chi ti?t s?n ph?m">
-        <div className="ops-card ops-muted">Kh?ng t?m th?y s?n ph?m.</div>
+      <PageShell title="Chi tiết sản phẩm">
+        <div className="bg-white p-12 text-center rounded-xl border border-slate-200 text-slate-500">Không tìm thấy sản phẩm.</div>
       </PageShell>
     );
   }
@@ -104,188 +105,156 @@ const ProductDetail = () => {
       title={product.name}
       subtitle={`Giá: ${formatVnd(Number(product.price))}`}
     >
-      <style>{`
-        .detail-container { width: 100%; margin: 0 auto; padding: 18px 0 40px; font-family: 'Segoe UI', Tahoma, sans-serif; color: #333; }
-        .back-btn { background: none; border: none; color: #4b5563; font-size: 16px; cursor: pointer; display: inline-flex; align-items: center; margin-bottom: 30px; padding: 0; transition: color 0.2s; }
-        .back-btn:hover { color: #4f46e5; }
-        .back-btn span { margin-right: 8px; font-size: 20px; }
-        .status-message { margin: 0 0 20px; padding: 10px 14px; border-radius: 8px; background-color: #ecfeff; color: #0f766e; border: 1px solid #99f6e4; }
+      <div className="w-full mx-auto py-6">
+        {statusMessage ? (
+          <div className="mb-6 p-4 rounded-lg bg-emerald-50 text-emerald-700 border border-emerald-200 flex items-center gap-3">
+            <svg className="w-5 h-5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7"></path></svg>
+            {statusMessage}
+          </div>
+        ) : null}
 
-        .product-wrapper { display: flex; flex-wrap: wrap; gap: clamp(24px, 4vw, 50px); background: white; padding: clamp(20px, 4vw, 40px); border-radius: 8px; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05), 0 2px 4px -1px rgba(0,0,0,0.03); }
-        .images-section { flex: 1; min-width: 300px; }
-        .main-img-container { width: 100%; height: 450px; border-radius: 12px; overflow: hidden; margin-bottom: 20px; border: 1px solid #f3f4f6; background-color: #f9fafb; display: flex; align-items: center; justify-content: center; }
-        .main-img-container img { max-width: 100%; max-height: 100%; object-fit: contain; }
-        .thumbnails { display: flex; gap: 15px; overflow-x: auto; padding-bottom: 10px; }
-        .thumbnail { width: 80px; height: 80px; border-radius: 8px; cursor: pointer; border: 2px solid transparent; overflow: hidden; background-color: #f9fafb; }
-        .thumbnail.active { border-color: #4f46e5; }
-        .thumbnail img { width: 100%; height: 100%; object-fit: cover; }
-
-        .info-section { flex: 1; min-width: 300px; display: flex; flex-direction: column; }
-        .product-title { font-size: 32px; font-weight: 700; color: #111827; margin-bottom: 15px; line-height: 1.2; }
-        .stats { display: flex; align-items: center; gap: 15px; margin-bottom: 25px; color: #6b7280; font-size: 14px; }
-        .stars { color: #fbbf24; font-size: 18px; }
-        .product-price { font-size: 36px; font-weight: bold; color: #4f46e5; margin-bottom: 20px; }
-        .short-desc { font-size: 16px; color: #4b5563; line-height: 1.6; margin-bottom: 30px; }
-
-        .actions-box { padding: 30px 0; border-top: 1px solid #e5e7eb; border-bottom: 1px solid #e5e7eb; margin-bottom: 30px; }
-        .quantity-selector { display: inline-flex; align-items: center; border: 1px solid #d1d5db; border-radius: 6px; overflow: hidden; margin-right: 20px; background: white; }
-        .quantity-btn { background: #f9fafb; border: none; padding: 10px 15px; font-size: 18px; cursor: pointer; transition: background 0.2s; }
-        .quantity-btn:hover { background: #e5e7eb; }
-        .quantity-input { width: 50px; text-align: center; border: none; border-left: 1px solid #d1d5db; border-right: 1px solid #d1d5db; outline: none; font-weight: 500; font-size: 16px; }
-
-        .add-cart-btn { padding: 14px 30px; background-color: #4f46e5; color: white; border: none; border-radius: 6px; font-size: 16px; font-weight: 600; cursor: pointer; transition: background 0.3s; display: inline-flex; align-items: center; gap: 8px; }
-        .add-cart-btn:hover { background-color: #4338ca; }
-        .add-cart-btn:disabled { opacity: 0.6; cursor: not-allowed; }
-        .stock-info { font-size: 14px; color: #6b7280; margin-top: 15px; }
-
-        .details-tab { margin-top: 32px; background: white; padding: clamp(20px, 4vw, 40px); border-radius: 8px; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05); }
-        .details-tab h3 { font-size: 24px; margin-bottom: 20px; color: #111827; border-bottom: 2px solid #eef2ff; padding-bottom: 10px; display: inline-block; }
-        .desc-content { line-height: 1.8; color: #4b5563; }
-
-        .spec-table { width: 100%; border-collapse: collapse; margin-top: 15px; border-radius: 8px; overflow: hidden; border: 1px solid #e5e7eb; }
-        .spec-row { display: flex; border-bottom: 1px solid #e5e7eb; }
-        .spec-row:last-child { border-bottom: none; }
-        .spec-name { padding: 15px 20px; background-color: #f9fafb; font-weight: 600; width: 35%; color: #4b5563; border-right: 1px solid #e5e7eb; text-transform: capitalize; }
-        .spec-value { padding: 15px 20px; width: 65%; color: #111827; }
-        @media (max-width: 600px) {
-          .spec-row { flex-direction: column; }
-          .spec-name { width: 100%; border-right: none; border-bottom: 1px solid #e5e7eb; }
-          .spec-value { width: 100%; }
-        }
-
-        @media (max-width: 768px) {
-          .product-wrapper { padding: 20px; }
-          .product-title { font-size: 24px; }
-          .product-price { font-size: 28px; }
-          .actions-box { display: flex; flex-direction: column; gap: 20px; }
-          .quantity-selector { margin-right: 0; width: fit-content; }
-          .add-cart-btn { width: 100%; justify-content: center; }
-        }
-      `}</style>
-
-      <div className="detail-container">
-        <button className="back-btn" onClick={() => navigate(-1)}>
-          <span>&larr;</span> Quay lại danh sách
-        </button>
-
-        {statusMessage ? <div className="status-message">{statusMessage}</div> : null}
-
-        <div className="product-wrapper">
-          <div className="images-section">
-            <div className="main-img-container">
-              <img src={mainImage} alt={product.name} />
+        <div className="flex flex-col md:flex-row gap-8 bg-white p-6 md:p-8 rounded-xl shadow-sm border border-slate-100 mb-8">
+          <div className="w-full md:w-[450px] shrink-0 flex flex-col gap-4">
+            <div className="w-full aspect-square relative rounded-xl overflow-hidden bg-slate-50 border border-slate-100 group">
+              <img src={mainImage} alt={product.name} className="absolute inset-0 w-full h-full object-contain p-4 transition-transform duration-500 group-hover:scale-110" />
             </div>
-            {product.images && product.images.length > 0 && (
-              <div className="thumbnails">
-                {product.images.map((img, index) => (
+            {Array.isArray(product.images) && product.images.length > 0 && (
+              <div className="flex gap-3 overflow-x-auto pb-2 snap-x">
+                {product.images?.map((img, index) => (
                   <div
                     key={index}
-                    className={`thumbnail ${mainImage === img ? 'active' : ''}`}
+                    className={`shrink-0 w-20 h-20 relative rounded-lg overflow-hidden cursor-pointer border-2 transition-all snap-start ${mainImage === img ? 'border-brand-600' : 'border-transparent hover:border-slate-300'} bg-slate-50`}
                     onClick={() => setMainImage(img)}
                   >
-                    <img src={img} alt={`${product.name} anh ${index + 1}`} />
+                    <img src={img} alt={`${product.name} ảnh ${index + 1}`} className="absolute inset-0 w-full h-full object-cover" />
                   </div>
                 ))}
               </div>
             )}
           </div>
 
-          <div className="info-section">
-            <h1 className="product-title">{product.name}</h1>
+          <div className="flex-1 min-w-0 flex flex-col">
+            <h1 className="text-2xl font-bold text-slate-900 leading-tight mb-4">{product.name}</h1>
 
-            <div className="stats">
-              <span className="stars">
+            <div className="flex items-center gap-4 mb-6 text-sm text-slate-600">
+              <div className="flex items-center gap-1 text-amber-400">
                 {'★'.repeat(product.StarCount || 5)}{'☆'.repeat(5 - (product.StarCount || 5))}
-              </span>
-              <span>•</span>
+              </div>
+              <span className="w-1 h-1 rounded-full bg-slate-300"></span>
               <span>{product.totalRates} Đánh giá</span>
-              <span>•</span>
+              <span className="w-1 h-1 rounded-full bg-slate-300"></span>
               <span>Đã bán {product.sold}</span>
             </div>
 
-            <div className="product-price">{formatVnd(Number(product.price))}</div>
+            <div className="bg-slate-50 p-6 rounded-xl flex items-center gap-2 mb-8 border border-slate-100">
+              <span className="text-xl font-medium text-brand-600">₫</span>
+              <span className="text-4xl font-bold text-brand-600">{Number(product.price).toLocaleString('vi-VN')}</span>
+            </div>
 
-            <p className="short-desc">{product.shortDesc}</p>
+            <p className="text-slate-600 text-base leading-relaxed mb-8 whitespace-pre-wrap">{product.shortDesc}</p>
 
             {auth.isCustomer ? (
-              <div className="actions-box">
-                <div className="quantity-selector">
-                  <button
-                    className="quantity-btn"
-                    onClick={() => setQuantity((value) => Math.max(1, value - 1))}
-                  >-</button>
-                  <input
-                    type="number"
-                    className="quantity-input"
-                    value={quantity}
-                    onChange={(event) => setQuantity(Math.max(1, parseInt(event.target.value, 10) || 1))}
-                    min="1"
-                    max={product.quantity}
-                  />
-                  <button
-                    className="quantity-btn"
-                    onClick={() => setQuantity((value) => Math.min(product.quantity, value + 1))}
-                  >+</button>
+              <div className="flex flex-col gap-8 mt-auto">
+                <div className="flex items-center gap-6 text-slate-600">
+                  <span className="font-medium">Số Lượng</span>
+                  <div className="flex items-center border border-slate-200 rounded-lg overflow-hidden bg-white shadow-sm h-11">
+                    <button
+                      className="w-11 h-full flex items-center justify-center text-slate-500 hover:bg-slate-50 transition-colors disabled:opacity-50"
+                      onClick={() => setQuantity((value) => Math.max(1, value - 1))}
+                    >−</button>
+                    <input
+                      type="text"
+                      className="w-14 h-full text-center border-none font-medium text-slate-900 focus:outline-none"
+                      value={quantity}
+                      onChange={(event) => setQuantity(Math.max(1, parseInt(event.target.value, 10) || 1))}
+                    />
+                    <button
+                      className="w-11 h-full flex items-center justify-center text-slate-500 hover:bg-slate-50 transition-colors disabled:opacity-50"
+                      onClick={() => setQuantity((value) => Math.min(product.quantity, value + 1))}
+                    >+</button>
+                  </div>
+                  <span className="text-sm">{product.quantity} sản phẩm có sẵn</span>
                 </div>
 
-                <button className="add-cart-btn" onClick={handleAddToCart} disabled={isCartBusy}>
-                  <svg width="20" height="20" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z" /></svg>
-                  {isCartBusy ? 'Đang xử lý...' : 'Thêm vào giỏ hàng'}
-                </button>
-                <div className="stock-info">Sản phẩm có sẵn: {product.quantity}</div>
+                <div className="flex flex-col sm:flex-row gap-4">
+                  <button 
+                    className="flex-1 h-14 bg-brand-50 hover:bg-brand-100 text-brand-700 border border-brand-200 rounded-xl font-semibold transition-all flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
+                    onClick={handleAddToCart} 
+                    disabled={isCartBusy}
+                  >
+                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z"></path></svg>
+                    {isCartBusy ? 'Đang xử lý...' : 'Thêm Vào Giỏ'}
+                  </button>
+                  <button 
+                    className="flex-1 h-14 bg-brand-600 hover:bg-brand-700 text-white rounded-xl font-semibold transition-all shadow-sm hover:shadow-md disabled:opacity-50 disabled:cursor-not-allowed"
+                    onClick={() => {
+                      handleAddToCart();
+                      // openCart would be called here if available
+                    }} 
+                    disabled={isCartBusy}
+                  >
+                    Mua Ngay
+                  </button>
+                </div>
               </div>
             ) : null}
+            
             {auth.isGuest ? (
-              <Card className="ops-stack">
-                <h3>Đăng nhập để mua hàng</h3>
-                <p className="ops-muted">Vui lòng đăng nhập để thêm sản phẩm vào giỏ hàng.</p>
-                <div className="ops-actions">
+              <Card className="flex flex-col gap-4 mt-auto border-brand-100 bg-brand-50/30">
+                <h3 className="m-0 text-lg font-bold text-slate-900">Đăng nhập để mua hàng</h3>
+                <p className="m-0 text-slate-600">Vui lòng đăng nhập để thêm sản phẩm vào giỏ hàng.</p>
+                <div className="flex gap-3 mt-2">
                   <Button as={Link} to="/login">Đăng nhập</Button>
                   <Button as={Link} variant="secondary" to="/register">Đăng ký</Button>
                 </div>
               </Card>
             ) : null}
+            
             {auth.isSeller ? (
-              <Card><p className="ops-muted">Tài khoản SELLER có thể xem catalog nhưng không có thao tác mua hàng.</p></Card>
+              <Card className="mt-auto bg-slate-50 border-slate-200">
+                <p className="m-0 text-slate-600 text-sm">Tài khoản SELLER có thể xem catalog nhưng không có thao tác mua hàng.</p>
+              </Card>
             ) : null}
           </div>
         </div>
 
-        <div className="details-tab">
-          <h3>Thông số kỹ thuật và mô tả chi tiết</h3>
-          <div className="desc-content">
-            {typeof product.detailDesc === 'string'
-              ? <div dangerouslySetInnerHTML={{ __html: product.detailDesc.replace(/\n/g, '<br/>') }} />
-              : (
-                <div className="spec-table">
-                  {product.detailDesc && Object.entries(product.detailDesc).map(([key, value], idx) => {
-                    let renderValue;
-                    if (value !== null && typeof value === 'object') {
-                      if (Array.isArray(value)) {
-                        renderValue = value.map((item, i) => <div key={i}>{item}</div>);
+        <div className="bg-white rounded-xl shadow-sm border border-slate-100 overflow-hidden">
+          <div className="bg-slate-50 px-8 py-5 border-b border-slate-100">
+            <h3 className="text-lg font-bold text-slate-900 m-0 uppercase tracking-wide">Chi tiết sản phẩm</h3>
+          </div>
+          <div className="p-8">
+            <div className="prose prose-slate max-w-none text-slate-700 leading-loose">
+              {typeof product.detailDesc === 'string'
+                ? <div dangerouslySetInnerHTML={{ __html: product.detailDesc.replace(/\n/g, '<br/>') }} />
+                : (
+                  <div className="flex flex-col gap-4">
+                    {product.detailDesc && Object.entries(product.detailDesc).map(([key, value], idx) => {
+                      let renderValue;
+                      if (value !== null && typeof value === 'object') {
+                        if (Array.isArray(value)) {
+                          renderValue = Array.isArray(value) ? value.map((item, i) => <div key={i}>{item}</div>) : null;
+                        } else {
+                          renderValue = JSON.stringify(value);
+                        }
                       } else {
-                        renderValue = JSON.stringify(value);
+                        renderValue = String(value).split('\n').map((line, i) => <div key={i}>{line}</div>);
                       }
-                    } else {
-                      renderValue = String(value).split('\n').map((line, i) => <div key={i}>{line}</div>);
-                    }
-                    return (
-                      <div className="spec-row" key={idx}>
-                        <div className="spec-name">{key}</div>
-                        <div className="spec-value">{renderValue}</div>
-                      </div>
-                    );
-                  })}
-                </div>
-              )
-            }
+                      return (
+                        <div className="flex border-b border-slate-100 pb-4 last:border-0 last:pb-0" key={idx}>
+                          <div className="w-[200px] shrink-0 text-slate-500 font-medium">{key}</div>
+                          <div className="flex-1 text-slate-900">{renderValue}</div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                )
+              }
+            </div>
           </div>
         </div>
-        <ProductReviews productId={productId} />
       </div>
     </PageShell>
   );
 };
 
 export default ProductDetail;
-

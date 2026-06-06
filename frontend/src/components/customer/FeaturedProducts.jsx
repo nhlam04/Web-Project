@@ -14,52 +14,65 @@ export default function FeaturedProducts({
   onOpenProduct,
 }) {
   return (
-    <section className="landing-section" id="featured" ref={featuredRef}>
-      <div className="landing-section-head">
-        <div>
-          <h2>Sản phẩm nổi bật</h2>
-          <p>Tải từ endpoint sản phẩm đầu tiên của Catalog Service.</p>
+    <section className="py-12 md:py-16 bg-slate-50" id="featured" ref={featuredRef}>
+      <div className="max-w-[1200px] mx-auto px-4">
+        <div className="flex flex-col md:flex-row justify-between items-start md:items-end gap-4 mb-8">
+          <div>
+            <h2 className="text-2xl font-bold text-slate-900 mb-2">Sản phẩm nổi bật</h2>
+            <p className="text-slate-500">Tải từ endpoint sản phẩm đầu tiên của Catalog Service.</p>
+          </div>
         </div>
-      </div>
 
-      {error ? <Toast variant="error">{error}</Toast> : null}
-      {loading ? (
-        <div className="landing-product-grid">
-          {Array.from({ length: 4 }).map((_, index) => <Skeleton className="card" key={index} />)}
-        </div>
-      ) : null}
-      {!loading && !products.length ? (
-        <EmptyState
-          title="Chưa có sản phẩm nổi bật"
-          description="Bạn vẫn có thể mở trang tất cả sản phẩm để kiểm tra dữ liệu catalog."
-          action={<Button onClick={onBrowseProducts}>Mở danh sách sản phẩm</Button>}
-        />
-      ) : null}
-      {!loading && products.length ? (
-        <div className="landing-product-grid">
-          {products.map((product) => (
-            <article className="landing-product-card" key={product.id}>
-              <div className="landing-product-media">
-                <img src={getProductImage(product)} alt={product.name} />
-              </div>
-              <div className="landing-product-body">
-                <h3>{product.name}</h3>
-                <p className="landing-price">{formatPrice(product.price || product.unitPrice)}</p>
-                <div className="landing-product-actions">
-                  <Button type="button" variant="ghost" onClick={() => onOpenProduct(product)}>
-                    Xem chi tiết
-                  </Button>
-                  {auth.isCustomer ? (
-                    <Button type="button" onClick={() => onAddToCart(product)} disabled={isCartBusy}>
-                      {isCartBusy ? 'Đang thêm...' : 'Thêm vào giỏ'}
-                    </Button>
-                  ) : null}
+        {error ? <Toast variant="error">{error}</Toast> : null}
+        
+        {loading ? (
+          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
+            {Array.from({ length: 4 }).map((_, index) => <Skeleton className="h-[300px] rounded-xl" key={index} />)}
+          </div>
+        ) : null}
+
+        {!loading && !products.length ? (
+          <EmptyState
+            title="Chưa có sản phẩm nổi bật"
+            description="Bạn vẫn có thể mở trang tất cả sản phẩm để kiểm tra dữ liệu catalog."
+            action={<Button onClick={onBrowseProducts}>Mở danh sách sản phẩm</Button>}
+          />
+        ) : null}
+
+        {!loading && products.length ? (
+          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
+            {products.map((product) => (
+              <article className="group flex flex-col bg-white rounded-xl shadow-sm border border-slate-100 overflow-hidden transition-all duration-300 hover:shadow-lg hover:-translate-y-1 hover:border-brand-200" key={product.id}>
+                <div className="relative aspect-square bg-slate-100 overflow-hidden cursor-pointer" onClick={() => onOpenProduct(product)}>
+                  <img 
+                    src={getProductImage(product)} 
+                    alt={product.name} 
+                    className="absolute inset-0 w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
+                  />
                 </div>
-              </div>
-            </article>
-          ))}
-        </div>
-      ) : null}
+                <div className="flex flex-col flex-1 p-4">
+                  <h3 className="text-sm font-medium text-slate-900 mb-2 line-clamp-2 cursor-pointer hover:text-brand-600 transition-colors" onClick={() => onOpenProduct(product)}>
+                    {product.name}
+                  </h3>
+                  <p className="text-lg font-bold text-brand-600 mb-4 mt-auto">
+                    {formatPrice(product.price || product.unitPrice)}
+                  </p>
+                  <div className="flex gap-2">
+                    <Button type="button" variant="secondary" className="flex-1 px-0" onClick={() => onOpenProduct(product)}>
+                      Chi tiết
+                    </Button>
+                    {auth.isCustomer ? (
+                      <Button type="button" className="flex-1 px-0" onClick={() => onAddToCart(product)} disabled={isCartBusy}>
+                        {isCartBusy ? '...' : 'Thêm'}
+                      </Button>
+                    ) : null}
+                  </div>
+                </div>
+              </article>
+            ))}
+          </div>
+        ) : null}
+      </div>
     </section>
   );
 }

@@ -7,7 +7,7 @@ import { Button, Card, EmptyState, ErrorState, Input, OrderStatusBadge, Select, 
 const nextActions = {
   PENDING: { action: 'confirm', label: 'Xác nhận' },
   CONFIRMED: { action: 'ship', label: 'Gửi hàng' },
-  SHIPPED: { action: 'deliver', label: 'Đã gi?o' },
+  SHIPPED: { action: 'deliver', label: 'Đã giao' },
   DELIVERED: { action: 'complete', label: 'Hoàn tất' },
 };
 
@@ -80,59 +80,47 @@ const SellerOrdersPage = () => {
       title="Đơn hàng người bán"
       subtitle={sellerId ? `Seller ID: ${sellerId}` : 'Cần tài khoản người bán'}
       actions={[{ label: 'Hồ sơ', to: '/profile' }, { label: 'Thông báo', to: '/notifications' }]}
-      context={(
-        <div className="ops-grid">
-          <div className="ops-kpi">
-            <span className="ops-muted">Đang hiển thị</span>
-            <strong>{orders.length}</strong>
-          </div>
-          <div className="ops-kpi">
-            <span className="ops-muted">Giá trị</span>
-            <strong>{formatVnd(totalValue)}</strong>
-          </div>
-        </div>
-      )}
     >
-      <style>{`
-        .seller-dashboard { display: grid; gap: 16px; }
-        .seller-summary { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 12px; }
-        .seller-kpi { display: grid; gap: 6px; min-height: 108px; }
-        .seller-kpi span { color: #64748b; font-size: 13px; font-weight: 800; text-transform: uppercase; letter-spacing: .04em; }
-        .seller-kpi strong { color: #0f172a; font-size: 30px; }
-        .seller-controls { display: grid; grid-template-columns: repeat(auto-fit, minmax(210px, 1fr)); gap: 14px; align-items: end; }
-        .seller-table-id { display: grid; gap: 4px; min-width: 220px; }
-        .seller-item-list { display: grid; gap: 4px; min-width: 220px; }
-        .seller-action-cell { min-width: 140px; }
-      `}</style>
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-6 mb-8">
+        <div className="flex flex-col gap-1">
+          <span className="text-sm text-slate-500">Đang hiển thị</span>
+          <strong className="text-2xl text-slate-900">{orders.length}</strong>
+        </div>
+        <div className="flex flex-col gap-1">
+          <span className="text-sm text-slate-500">Giá trị</span>
+          <strong className="text-2xl text-brand-600">{formatVnd(totalValue)}</strong>
+        </div>
+      </div>
+
       {message ? <Toast>{message}</Toast> : null}
       {error ? <ErrorState title="Không thể tải đơn người bán" description={error} /> : null}
       {!sellerId ? (
         <Toast variant="error">Cần đăng nhập bằng tài khoản SELLER để xem và cập nhật đơn người bán.</Toast>
       ) : null}
 
-      <div className="seller-dashboard">
-        <div className="seller-summary">
+      <div className="flex flex-col gap-6">
+        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4">
           {statuses.map((item) => (
-            <Card className="seller-kpi" key={item}>
-              <span>{item}</span>
-              <strong>{summary[item] || 0}</strong>
+            <Card className="flex flex-col gap-2 min-h-[108px] justify-between" key={item}>
+              <span className="text-[13px] font-extrabold text-slate-500 uppercase tracking-widest">{item}</span>
+              <strong className="text-3xl text-slate-900 leading-none">{summary[item] || 0}</strong>
               <OrderStatusBadge status={item} />
             </Card>
           ))}
         </div>
 
-        <Card className="seller-controls">
+        <Card className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4 items-end">
           <Input label="Seller ID" value={sellerId || 'Chưa có seller đăng nhập'} readOnly />
           <Select label="Trạng thái" value={status} onChange={(e) => setStatus(e.target.value)}>
             <option value="">Tất cả</option>
             {statuses.map((item) => <option key={item} value={item}>{item}</option>)}
           </Select>
-          <Input label="Đơn vị vận ch?yển mặc định khi gửi hàng" value={shipping.carrier} onChange={(e) => setShipping({ ...shipping, carrier: e.target.value })} />
+          <Input label="Đơn vị vận chuyển mặc định khi gửi hàng" value={shipping.carrier} onChange={(e) => setShipping({ ...shipping, carrier: e.target.value })} />
           <Input label="Mã theo dõi khi gửi hàng" value={shipping.trackingCode} onChange={(e) => setShipping({ ...shipping, trackingCode: e.target.value })} />
-          <Button onClick={loadOrders} disabled={!sellerId || loading}>{loading ? 'Đang tải...' : 'Tải danh sách'}</Button>
+          <Button onClick={loadOrders} disabled={!sellerId || loading} className="w-full">{loading ? 'Đang tải...' : 'Tải danh sách'}</Button>
         </Card>
 
-        {loading ? <Skeleton className="card" /> : null}
+        {loading ? <Skeleton className="h-[400px]" /> : null}
 
         {!loading && !orders.length ? (
           <EmptyState
@@ -142,53 +130,53 @@ const SellerOrdersPage = () => {
         ) : null}
 
         {!loading && orders.length ? (
-          <div className="ops-table-wrap">
-            <table className="ops-table">
-              <thead>
+          <div className="overflow-x-auto border border-slate-200 rounded-xl bg-white shadow-sm">
+            <table className="w-full text-left text-sm whitespace-nowrap">
+              <thead className="bg-slate-50 text-slate-600 font-medium border-b border-slate-200">
                 <tr>
-                  <th>Fulfillment</th>
-                  <th>Trạng thái</th>
-                  <th>Sản phẩm</th>
-                  <th>Tổng</th>
-                  <th>Vận ch?yển</th>
-                  <th>Hành động tiếp theo</th>
+                  <th className="px-4 py-3">Fulfillment</th>
+                  <th className="px-4 py-3">Trạng thái</th>
+                  <th className="px-4 py-3">Sản phẩm</th>
+                  <th className="px-4 py-3">Tổng</th>
+                  <th className="px-4 py-3">Vận chuyển</th>
+                  <th className="px-4 py-3">Hành động tiếp theo</th>
                 </tr>
               </thead>
-              <tbody>
+              <tbody className="divide-y divide-slate-100">
                 {orders.map((order) => {
                   const nextAction = nextActions[order.status];
                   const orderTotal = (order.items || []).reduce((total, item) => total + Number(item.lineTotal || 0), 0);
                   return (
-                    <tr key={order.id}>
-                      <td>
-                        <div className="seller-table-id">
-                          <strong>{order.id}</strong>
-                          <span className="ops-muted ops-small">Đơn hàng: {order.orderId}</span>
-                          <span className="ops-muted ops-small">Khách hàng: {order.customerId}</span>
+                    <tr key={order.id} className="hover:bg-slate-50/50 transition-colors">
+                      <td className="px-4 py-4">
+                        <div className="flex flex-col gap-1 min-w-[220px]">
+                          <strong className="text-slate-900">{order.id}</strong>
+                          <span className="text-xs text-slate-500">Đơn hàng: {order.orderId}</span>
+                          <span className="text-xs text-slate-500">Khách hàng: {order.customerId}</span>
                         </div>
                       </td>
-                      <td><OrderStatusBadge status={order.status} /></td>
-                      <td>
-                        <div className="seller-item-list">
+                      <td className="px-4 py-4"><OrderStatusBadge status={order.status} /></td>
+                      <td className="px-4 py-4">
+                        <div className="flex flex-col gap-1 min-w-[220px]">
                           {(order.items || []).map((item) => (
-                            <span key={item.productId}>{item.name || item.productId} x {item.quantity}</span>
+                            <span key={item.productId} className="text-slate-700">{item.name || item.productId} x {item.quantity}</span>
                           ))}
                         </div>
                       </td>
-                      <td>{formatVnd(orderTotal)}</td>
-                      <td>
-                        <div className="seller-item-list">
-                          <span>{order.carrier || 'Chưa có'}</span>
-                          <span className="ops-muted ops-small">{order.trackingCode || 'Chưa có mã theo dõi'}</span>
+                      <td className="px-4 py-4 font-medium text-brand-600">{formatVnd(orderTotal)}</td>
+                      <td className="px-4 py-4">
+                        <div className="flex flex-col gap-1 min-w-[220px]">
+                          <span className="text-slate-700">{order.carrier || 'Chưa có'}</span>
+                          <span className="text-xs text-slate-500">{order.trackingCode || 'Chưa có mã theo dõi'}</span>
                         </div>
                       </td>
-                      <td className="seller-action-cell">
+                      <td className="px-4 py-4 min-w-[140px]">
                         {nextAction ? (
-                          <Button disabled={busyId === order.id} onClick={() => runAction(order, nextAction.action)}>
+                          <Button disabled={busyId === order.id} onClick={() => runAction(order, nextAction.action)} className="w-full">
                             {busyId === order.id ? 'Đang xử lý...' : nextAction.label}
                           </Button>
                         ) : (
-                          <Button disabled variant="secondary">Không có hành động</Button>
+                          <Button disabled variant="secondary" className="w-full">Không có hành động</Button>
                         )}
                       </td>
                     </tr>

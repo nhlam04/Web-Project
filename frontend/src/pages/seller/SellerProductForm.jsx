@@ -149,23 +149,23 @@ export default function SellerProductForm() {
   }
 
   return (
-    <div className="ops-stack">
-      <header className="ops-header">
+    <div className="flex flex-col gap-6">
+      <header className="flex flex-col md:flex-row justify-between items-start md:items-end gap-4">
         <div>
-          <h1>{isEdit ? 'Sửa sản phẩm' : 'Tạo sản phẩm'}</h1>
-          <p>{sellerId ? `Seller ID: ${sellerId}` : 'Cần tài khoản SELLER để lưu sản phẩm.'}</p>
+          <h1 className="text-2xl font-bold text-slate-900 m-0 mb-1">{isEdit ? 'Sửa sản phẩm' : 'Tạo sản phẩm'}</h1>
+          <p className="text-slate-500 m-0">{sellerId ? `Seller ID: ${sellerId}` : 'Cần tài khoản SELLER để lưu sản phẩm.'}</p>
         </div>
         <Button as={Link} variant="secondary" to="/seller/products">Danh sách sản phẩm</Button>
       </header>
 
-      {loading ? <Skeleton className="card" /> : null}
+      {loading ? <Skeleton className="h-[400px]" /> : null}
       {message ? <Toast>{message}</Toast> : null}
       {error ? <ErrorState title="Không thể lưu sản phẩm" description={error} /> : null}
 
       {!loading ? (
         <Card>
-          <form className="ops-stack" onSubmit={handleSubmit}>
-            <div className="ops-grid">
+          <form className="flex flex-col gap-6" onSubmit={handleSubmit}>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <Input label="Tên sản phẩm" value={form.name} onChange={(event) => updateField('name', event.target.value)} />
               <Input label="Giá" type="number" min="1" value={form.price} onChange={(event) => updateField('price', event.target.value)} />
               <Input label="Tồn kho" type="number" min="0" value={form.quantity} onChange={(event) => updateField('quantity', event.target.value)} />
@@ -179,22 +179,37 @@ export default function SellerProductForm() {
               </Select>
             </div>
 
-            <label className="ops-label">
-              Mô tả ngắn
-              <textarea className="ops-input" rows="3" value={form.shortDesc} onChange={(event) => updateField('shortDesc', event.target.value)} />
-            </label>
+            <div className="flex flex-col gap-1.5">
+              <label className="text-sm font-medium text-slate-700">Mô tả ngắn</label>
+              <textarea 
+                className="w-full px-4 py-2 border border-slate-300 rounded-lg text-sm focus:outline-none focus:border-brand-500 focus:ring-1 focus:ring-brand-500 transition-shadow bg-white text-slate-900" 
+                rows="3" 
+                value={form.shortDesc} 
+                onChange={(event) => updateField('shortDesc', event.target.value)} 
+              />
+            </div>
 
-            <label className="ops-label">
-              Mô tả chi tiết
-              <textarea className="ops-input" rows="6" value={form.detailDesc} onChange={(event) => updateField('detailDesc', event.target.value)} />
-            </label>
+            <div className="flex flex-col gap-1.5">
+              <label className="text-sm font-medium text-slate-700">Mô tả chi tiết</label>
+              <textarea 
+                className="w-full px-4 py-2 border border-slate-300 rounded-lg text-sm focus:outline-none focus:border-brand-500 focus:ring-1 focus:ring-brand-500 transition-shadow bg-white text-slate-900 font-mono" 
+                rows="6" 
+                value={form.detailDesc} 
+                onChange={(event) => updateField('detailDesc', event.target.value)} 
+              />
+            </div>
 
-            <label className="ops-label">
-              Ảnh sản phẩm, mỗi URL một dòng
-              <textarea className="ops-input" rows="4" value={form.images} onChange={(event) => updateField('images', event.target.value)} />
-            </label>
+            <div className="flex flex-col gap-1.5">
+              <label className="text-sm font-medium text-slate-700">Ảnh sản phẩm, mỗi URL một dòng</label>
+              <textarea 
+                className="w-full px-4 py-2 border border-slate-300 rounded-lg text-sm focus:outline-none focus:border-brand-500 focus:ring-1 focus:ring-brand-500 transition-shadow bg-white text-slate-900" 
+                rows="4" 
+                value={form.images} 
+                onChange={(event) => updateField('images', event.target.value)} 
+              />
+            </div>
 
-            <div className="ops-actions">
+            <div className="flex flex-wrap gap-2 pt-4 border-t border-slate-100 mt-2">
               <Button type="submit" disabled={!canSubmit || saving}>{saving ? 'Đang lưu...' : (isEdit ? 'Cập nhật sản phẩm' : 'Tạo sản phẩm')}</Button>
               <Button as={Link} variant="ghost" to="/seller/products">Hủy</Button>
             </div>
