@@ -14,7 +14,7 @@ apiClient.interceptors.request.use((config) => {
 });
 
 apiClient.interceptors.response.use(
-  (response) => response.data?.data ?? response.data,
+  (response) => (response.config.rawResponseData ? response.data : response.data?.data ?? response.data),
   (error) => {
     const payload = error.response?.data;
     const message = payload?.error?.message || payload?.error || payload?.message || error.message || 'Không thể kết nối API';

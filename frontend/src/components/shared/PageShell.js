@@ -19,6 +19,13 @@ function getPrimaryLinks(auth) {
     return [productLink, categoryLink];
   }
 
+  if (auth.isAdmin) {
+    return [
+      { to: '/admin/users', label: 'Người dùng' },
+      { to: '/products', label: 'Sản phẩm', match: productMatch },
+    ];
+  }
+
   if (auth.isCustomer) {
     return [
       { to: '/', label: 'Trang chủ', match: (pathname) => pathname === '/' },
@@ -46,6 +53,7 @@ function routeLabel(pathname) {
   if (pathname.startsWith('/orders/')) return 'Chi tiết đơn hàng';
   if (pathname.startsWith('/fulfillment-tracking/')) return 'Theo dõi giao hàng';
   if (pathname === '/notifications') return 'Thông báo';
+  if (pathname === '/admin/users') return 'Quản trị người dùng';
   if (pathname === '/product-list' || pathname === '/products') return 'Sản phẩm';
   if (pathname === '/return-policy') return 'Chính sách đổi trả';
   if (pathname === '/privacy-policy') return 'Chính sách bảo mật';
@@ -66,6 +74,7 @@ function breadcrumbItems(pathname, pageTitle) {
   if (pathname.startsWith('/catalogs/')) return [{ to: '/', label: 'Trang chủ' }, { label: pageTitle || 'Danh mục' }];
   if (pathname.startsWith('/orders/')) return [{ to: '/orders', label: 'Đơn hàng' }, { label: 'Chi tiết đơn hàng' }];
   if (pathname.startsWith('/fulfillment-tracking/')) return [{ to: '/orders', label: 'Đơn hàng' }, { label: 'Theo dõi giao hàng' }];
+  if (pathname === '/admin/users') return [{ to: '/', label: 'Trang chủ' }, { label: 'Quản trị người dùng' }];
   return [{ to: '/', label: 'Trang chủ' }, { label: routeLabel(pathname) }];
 }
 

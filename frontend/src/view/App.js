@@ -13,6 +13,7 @@ import OrderDetailPage from '../components/orders/OrderDetailPage';
 import FulfillmentTrackingPage from '../components/orders/FulfillmentTrackingPage';
 import SellerOrdersPage from '../components/seller/SellerOrdersPage';
 import NotificationListPage from '../components/notifications/NotificationListPage';
+import AdminUsersPage from '../components/admin/AdminUsersPage';
 import { CartProvider } from '../components/cart/CartProvider';
 import { AuthProvider } from '../components/auth/AuthProvider';
 import { GuestOnly, RequireAuth, RequireRole } from '../components/auth/AuthGates';
@@ -51,6 +52,9 @@ function App() {
 
             {/* Seller */}
             <Route path="/seller/orders" element={<RequireRole roles={['SELLER']}><SellerOrdersPage /></RequireRole>} />
+
+            {/* Admin */}
+            <Route path="/admin/users" element={<RequireRole roles={['ADMIN']}><AdminUsersPage /></RequireRole>} />
           </Routes>
           <ChatWidget />
         </CartProvider>

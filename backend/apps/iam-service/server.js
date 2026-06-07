@@ -25,6 +25,7 @@ app.use(express.json());
 
 const PORT = process.env.PORT || 3001;
 const ALLOWED_ACCOUNT_ROLES = new Set(['CUSTOMER', 'SELLER']);
+const ADMIN_MANAGED_ROLES = new Set(['CUSTOMER', 'SELLER', 'ADMIN']);
 
 // Tạo kết nối (Pool) tới MySQL
 const pool = mysql.createPool({
@@ -252,9 +253,10 @@ app.post('/register', registerLimiter, async (req, res) => {
 });
 
 // -----------------------------------------
-// 2. API Đăng nhập (Login) - ACCOUNT LOCKOUT DISABLED (TEMP)
+// 2. API Đăng nhập (Login)
 // -----------------------------------------
-// Local demo override: disable login rate limiting so repeated login attempts are allowed.
+// Local demo override: keep login rate limiting disabled so repeated login attempts are allowed,
+// but account lockout still blocks users whose locked_until has not expired.
 // app.post('/login', authLimiter, async (req, res) => {
 app.post('/login', async (req, res) => {
     const { username, password } = req.body;
@@ -305,7 +307,21 @@ app.post('/login', async (req, res) => {
 
         const user = users[0];
 
-        // Temporary: skip lockout checks to allow unlimited attempts in local testing.
+        if (user.locked_until && new Date(user.locked_until).getTime() > Date.now()) {
+            await logAudit({
+                userId: user.id,
+                eventType: 'AUTH',
+                eventAction: 'LOGIN_BLOCKED_LOCKED_ACCOUNT',
+                ipAddress: getClientIp(req),
+                userAgent: getUserAgent(req),
+                requestData: { username: sanitizedUsername, lockedUntil: user.locked_until },
+                responseStatus: 423
+            });
+
+            return res.status(423).json({
+                error: 'Tài khoản đang bị khóa. Vui lòng thử lại sau.'
+            });
+        }
 
         // So sánh mật khẩu
         const isValidPassword = await bcrypt.compare(password, user.password_hash);
@@ -647,6 +663,183 @@ const amqp = require('amqplib');
 // -----------------------------------------
 // 4. API Dành riêng cho Admin (CẦN TOKEN + QUYỀN ADMIN)
 // -----------------------------------------
+app.get('/admin/users', authenticateToken, authorizeRole('ADMIN'), async (req, res) => {
+    const page = Math.max(1, Number(req.query.page || 1));
+    const limit = Math.min(100, Math.max(1, Number(req.query.limit || 20)));
+    const offset = (page - 1) * limit;
+    const search = String(req.query.search || '').trim();
+    const role = String(req.query.role || '').trim().toUpperCase();
+    const lockStatus = String(req.query.lockStatus || '').trim().toUpperCase();
+
+    const where = [];
+    const params = [];
+
+    if (search) {
+        where.push('(username LIKE ? OR id LIKE ?)');
+        params.push(`%${search}%`, `%${search}%`);
+    }
+
+    if (role) {
+        where.push('role = ?');
+        params.push(role);
+    }
+
+    if (lockStatus === 'LOCKED') {
+        where.push('locked_until IS NOT NULL AND locked_until > NOW()');
+    } else if (lockStatus === 'UNLOCKED') {
+        where.push('(locked_until IS NULL OR locked_until <= NOW())');
+    }
+
+    const whereSql = where.length ? `WHERE ${where.join(' AND ')}` : '';
+
+    try {
+        const [countRows] = await pool.query(`SELECT COUNT(*) AS total FROM users ${whereSql}`, params);
+        const [rows] = await pool.query(
+            `SELECT id, username, role, failed_login_attempts AS failedLoginAttempts, locked_until AS lockedUntil,
+                    CASE WHEN locked_until IS NOT NULL AND locked_until > NOW() THEN 1 ELSE 0 END AS isLocked
+             FROM users
+             ${whereSql}
+             ORDER BY username ASC
+             LIMIT ? OFFSET ?`,
+            [...params, limit, offset]
+        );
+
+        await logAudit({
+            userId: req.user.userId,
+            eventType: 'ADMIN',
+            eventAction: 'USERS_LIST',
+            ipAddress: getClientIp(req),
+            userAgent: getUserAgent(req),
+            requestData: { search, role, lockStatus, page, limit },
+            responseStatus: 200
+        });
+
+        res.status(200).json({
+            data: rows.map((user) => ({ ...user, isLocked: Boolean(user.isLocked) })),
+            pagination: {
+                page,
+                limit,
+                total: countRows[0].total,
+                totalPages: Math.ceil(countRows[0].total / limit)
+            }
+        });
+    } catch (error) {
+        await logAudit({
+            userId: req.user.userId,
+            eventType: 'ADMIN',
+            eventAction: 'USERS_LIST_ERROR',
+            ipAddress: getClientIp(req),
+            userAgent: getUserAgent(req),
+            requestData: { error: error.message },
+            responseStatus: 500
+        });
+        res.status(500).json({ error: error.message });
+    }
+});
+
+app.get('/admin/users/:id', authenticateToken, authorizeRole('ADMIN'), async (req, res) => {
+    try {
+        const [rows] = await pool.query(
+            `SELECT id, username, role, failed_login_attempts AS failedLoginAttempts, locked_until AS lockedUntil,
+                    CASE WHEN locked_until IS NOT NULL AND locked_until > NOW() THEN 1 ELSE 0 END AS isLocked
+             FROM users
+             WHERE id = ?`,
+            [req.params.id]
+        );
+
+        if (rows.length === 0) {
+            return res.status(404).json({ error: 'Không tìm thấy người dùng' });
+        }
+
+        res.status(200).json({ data: { ...rows[0], isLocked: Boolean(rows[0].isLocked) } });
+    } catch (error) {
+        res.status(500).json({ error: error.message });
+    }
+});
+
+app.patch('/admin/users/:id/role', authenticateToken, authorizeRole('ADMIN'), async (req, res) => {
+    const role = String(req.body.role || '').trim().toUpperCase();
+
+    if (!ADMIN_MANAGED_ROLES.has(role)) {
+        return res.status(400).json({ error: 'Vai trò không hợp lệ' });
+    }
+
+    try {
+        const [result] = await pool.query('UPDATE users SET role = ? WHERE id = ?', [role, req.params.id]);
+        if (result.affectedRows === 0) {
+            return res.status(404).json({ error: 'Không tìm thấy người dùng' });
+        }
+
+        await logAudit({
+            userId: req.user.userId,
+            eventType: 'ADMIN',
+            eventAction: 'USER_ROLE_UPDATED',
+            ipAddress: getClientIp(req),
+            userAgent: getUserAgent(req),
+            requestData: { targetUserId: req.params.id, role },
+            responseStatus: 200
+        });
+
+        res.status(200).json({ message: 'Đã cập nhật vai trò người dùng' });
+    } catch (error) {
+        res.status(500).json({ error: error.message });
+    }
+});
+
+app.patch('/admin/users/:id/lock', authenticateToken, authorizeRole('ADMIN'), async (req, res) => {
+    const hours = Math.min(24 * 365, Math.max(1, Number(req.body.hours || 24)));
+
+    try {
+        const [result] = await pool.query(
+            'UPDATE users SET locked_until = DATE_ADD(NOW(), INTERVAL ? HOUR) WHERE id = ?',
+            [hours, req.params.id]
+        );
+        if (result.affectedRows === 0) {
+            return res.status(404).json({ error: 'Không tìm thấy người dùng' });
+        }
+
+        await logAudit({
+            userId: req.user.userId,
+            eventType: 'ADMIN',
+            eventAction: 'USER_LOCKED',
+            ipAddress: getClientIp(req),
+            userAgent: getUserAgent(req),
+            requestData: { targetUserId: req.params.id, hours },
+            responseStatus: 200
+        });
+
+        res.status(200).json({ message: `Đã khóa người dùng trong ${hours} giờ` });
+    } catch (error) {
+        res.status(500).json({ error: error.message });
+    }
+});
+
+app.patch('/admin/users/:id/unlock', authenticateToken, authorizeRole('ADMIN'), async (req, res) => {
+    try {
+        const [result] = await pool.query(
+            'UPDATE users SET locked_until = NULL, failed_login_attempts = 0 WHERE id = ?',
+            [req.params.id]
+        );
+        if (result.affectedRows === 0) {
+            return res.status(404).json({ error: 'Không tìm thấy người dùng' });
+        }
+
+        await logAudit({
+            userId: req.user.userId,
+            eventType: 'ADMIN',
+            eventAction: 'USER_UNLOCKED',
+            ipAddress: getClientIp(req),
+            userAgent: getUserAgent(req),
+            requestData: { targetUserId: req.params.id },
+            responseStatus: 200
+        });
+
+        res.status(200).json({ message: 'Đã mở khóa người dùng' });
+    } catch (error) {
+        res.status(500).json({ error: error.message });
+    }
+});
+
 app.get('/admin/dashboard', authenticateToken, authorizeRole('ADMIN'), async (req, res) => {
     await logAudit({
         userId: req.user.userId,
