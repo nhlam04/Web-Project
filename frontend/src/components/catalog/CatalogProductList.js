@@ -7,8 +7,6 @@ import { API_BASES } from '../../utils/constants';
 
 const CATALOG_BASE_URL = API_BASES.catalog || 'http://127.0.0.1:8000';
 
-const AVAILABLE_BRANDS = ['Asus', 'Dell', 'HP', 'Lenovo', 'Apple', 'Acer', 'MSI'];
-const AVAILABLE_LOCATIONS = ['Hà Nội', 'TP. Hồ Chí Minh', 'Đà Nẵng'];
 
 const CatalogProductList = () => {
   const { catalogId } = useParams();
@@ -18,10 +16,8 @@ const CatalogProductList = () => {
   const [filteredProducts, setFilteredProducts] = useState([]);
   const [loading, setLoading] = useState(true);
   const [page, setPage] = useState(1);
-  const [selectedBrands, setSelectedBrands] = useState([]);
   const [priceFrom, setPriceFrom] = useState('');
   const [priceTo, setPriceTo] = useState('');
-  const [selectedLocations, setSelectedLocations] = useState([]);
   const [statusMessage, setStatusMessage] = useState('');
   const { addProduct, isBusy: isCartBusy } = useCart();
   const limit = 8;
@@ -34,14 +30,6 @@ const CatalogProductList = () => {
   useEffect(() => {
     let result = [...allProducts];
 
-    if (selectedBrands.length > 0) {
-      result = result.filter((product) => selectedBrands.includes(product.brand));
-    }
-
-    if (selectedLocations.length > 0) {
-      result = result.filter((product) => selectedLocations.includes(product.location));
-    }
-
     const min = priceFrom === '' ? null : Number(priceFrom);
     const max = priceTo === '' ? null : Number(priceTo);
     if (min !== null && Number.isFinite(min)) {
@@ -53,7 +41,7 @@ const CatalogProductList = () => {
 
     setFilteredProducts(result);
     setPage(1);
-  }, [allProducts, selectedBrands, selectedLocations, priceFrom, priceTo]);
+  }, [allProducts, priceFrom, priceTo]);
 
   const fetchCatalogInfo = async () => {
     try {
@@ -82,23 +70,9 @@ const CatalogProductList = () => {
     }
   };
 
-  const handleBrandChange = (brand) => {
-    setSelectedBrands((prev) =>
-      prev.includes(brand) ? prev.filter((item) => item !== brand) : [...prev, brand],
-    );
-  };
-
-  const handleLocationChange = (location) => {
-    setSelectedLocations((prev) =>
-      prev.includes(location) ? prev.filter((item) => item !== location) : [...prev, location],
-    );
-  };
-
   const clearFilters = () => {
-    setSelectedBrands([]);
     setPriceFrom('');
     setPriceTo('');
-    setSelectedLocations([]);
   };
 
   const handleAddToCart = async (event, product) => {
@@ -114,7 +88,7 @@ const CatalogProductList = () => {
   const totalPages = Math.ceil(filteredProducts.length / limit);
   const startIndex = (page - 1) * limit;
   const currentDisplayedProducts = filteredProducts.slice(startIndex, startIndex + limit);
-  const hasFilters = selectedBrands.length > 0 || priceFrom || priceTo || selectedLocations.length > 0;
+  const hasFilters = priceFrom || priceTo;
 
   return (
     <PageShell
@@ -174,25 +148,6 @@ const CatalogProductList = () => {
               </div>
             </div>
 
-            <div className="filter-section">
-              <h4>Thương hiệu</h4>
-              {AVAILABLE_BRANDS.map((brand) => (
-                <label key={brand} className="filter-item">
-                  <input type="checkbox" checked={selectedBrands.includes(brand)} onChange={() => handleBrandChange(brand)} />
-                  {brand}
-                </label>
-              ))}
-            </div>
-
-            <div className="filter-section">
-              <h4>Nơi bán</h4>
-              {AVAILABLE_LOCATIONS.map((loc) => (
-                <label key={loc} className="filter-item">
-                  <input type="checkbox" checked={selectedLocations.includes(loc)} onChange={() => handleLocationChange(loc)} />
-                  {loc}
-                </label>
-              ))}
-            </div>
 
             {hasFilters ? (
               <Button variant="ghost" onClick={clearFilters} style={{ width: '100%' }}>
