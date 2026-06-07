@@ -50,16 +50,10 @@ const NotificationListPage = () => {
   }
 
   return (
-    <PageShell
-      title="Thông báo"
-      subtitle={`User ID: ${userId}`}
-    >
+    <PageShell title="Thông báo">
       {message ? <Toast>{message}</Toast> : null}
       {error ? <ErrorState title="Không thể tải thông báo" description={error} /> : null}
       <Card className="ops-row" style={{ marginBottom: 16 }}>
-        <div style={{ flex: '1 1 260px' }}>
-          <Input label="User ID" value={userId} onChange={(e) => setUserId(e.target.value)} />
-        </div>
         <div style={{ width: 180 }}>
           <Select label="Bộ lọc" value={unreadOnly ? 'unread' : 'all'} onChange={(e) => setUnreadOnly(e.target.value === 'unread')}>
             <option value="all">Tất cả</option>
@@ -69,7 +63,7 @@ const NotificationListPage = () => {
         <Button onClick={loadNotifications} disabled={busy}>{busy ? 'Đang tải...' : 'Tải lại'}</Button>
         <Button variant="secondary" onClick={markAll}>Đánh dấu tất cả đã đọc</Button>
       </Card>
-      {!notifications.length ? <EmptyState title="Không có thông báo" description="Thông báo mới sẽ xuất hiện sau checkout và cập nhật fulfillment." /> : null}
+      {!notifications.length ? <EmptyState title="Không có thông báo" description="Thông báo mới sẽ xuất hiện sau khi đặt hàng và cập nhật giao hàng." /> : null}
       <div className="ops-stack">
         {notifications.map((item) => (
           <Card className="ops-stack" key={item.id}>
@@ -77,7 +71,7 @@ const NotificationListPage = () => {
               <div>
                 <h2>{item.title}</h2>
                 <p>{item.body}</p>
-                <p className="ops-muted ops-small">{item.eventName} | {new Date(item.createdAt).toLocaleString()}</p>
+                <p className="ops-muted ops-small">{new Date(item.createdAt).toLocaleString('vi-VN')}</p>
               </div>
               <Badge variant={item.readAt ? 'neutral' : 'warning'}>{item.readAt ? 'Đã đọc' : 'Chưa đọc'}</Badge>
             </div>

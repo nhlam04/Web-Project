@@ -7,7 +7,6 @@ export default function CategorySection({ categories, error, loading, onBrowsePr
       <div className="landing-section-head">
         <div>
           <h2>Danh mục sản phẩm</h2>
-          <p>Dữ liệu được tải từ Catalog Service.</p>
         </div>
         <Button variant="ghost" onClick={onBrowseProducts}>Xem sản phẩm</Button>
       </div>

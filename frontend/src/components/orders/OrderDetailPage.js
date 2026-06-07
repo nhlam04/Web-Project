@@ -204,8 +204,8 @@ const OrderDetailPage = () => {
           </section>
 
           <Card>
-            <h3>Fulfillment liên quan</h3>
-            {!fulfillments.length ? <EmptyState title="Chưa có fulfillment" description="Fulfillment sẽ được tạo sau khi sự kiện OrderPlaced được xử lý." /> : null}
+            <h3>Giao hàng liên quan</h3>
+            {!fulfillments.length ? <EmptyState title="Chưa có thông tin giao hàng" description="Thông tin giao hàng sẽ được cập nhật sau khi đơn hàng được xử lý." /> : null}
             {fulfillments.map((item) => (
               <p key={item.id}>{item.id} - <OrderStatusBadge status={item.status} /> - {item.carrier || 'Chưa có đơn vị vận chuyển'} {item.trackingCode || ''}</p>
             ))}

@@ -10,6 +10,7 @@ const EVENT_ALIASES = {
   'fulfillment.status-updated': 'fulfillment.delivery_updated',
   OrderCompleted: 'fulfillment.order_completed',
   'fulfillment.completed': 'fulfillment.order_completed',
+  ReviewCreated: 'review.created',
 };
 
 function canonicalizeEventName(eventName) {
@@ -19,77 +20,77 @@ function canonicalizeEventName(eventName) {
 function buildNotificationContent(eventName, payload) {
   if (eventName === 'order.placed') {
     return {
-      title: 'Order placed',
-      body: `Order ${payload.orderId} was created.`,
+      title: 'Đã đặt hàng',
+      body: `Đơn hàng ${payload.orderId} đã được tạo thành công.`,
     };
   }
 
   if (eventName === 'order.cancelled') {
     return {
-      title: 'Order cancelled',
-      body: `Order ${payload.orderId} was cancelled.`,
+      title: 'Đã hủy đơn hàng',
+      body: `Đơn hàng ${payload.orderId} đã bị hủy.`,
     };
   }
 
   if (eventName === 'order.status_updated') {
     return {
-      title: 'Order status updated',
-      body: `Order ${payload.orderId} moved to ${payload.toStatus}.`,
+      title: 'Cập nhật trạng thái đơn hàng',
+      body: `Trạng thái đơn hàng ${payload.orderId} đã chuyển sang ${payload.toStatus}.`,
     };
   }
 
   if (eventName === 'fulfillment.seller_order_confirmed') {
     return {
-      title: 'Seller confirmed order',
-      body: `Seller confirmed order ${payload.orderId}.`,
+      title: 'Người bán đã xác nhận',
+      body: `Người bán đã xác nhận đơn hàng ${payload.orderId}.`,
     };
   }
 
   if (eventName === 'fulfillment.delivery_updated') {
     return {
-      title: 'Delivery update',
-      body: `Order ${payload.orderId} status is ${payload.newStatus || payload.status}.`,
+      title: 'Cập nhật giao hàng',
+      body: `Trạng thái giao hàng đơn ${payload.orderId} là ${payload.newStatus || payload.status}.`,
     };
   }
 
   if (eventName === 'fulfillment.order_completed') {
     return {
-      title: 'Order completed',
-      body: `Order ${payload.orderId} is completed.`,
+      title: 'Đơn hàng hoàn tất',
+      body: `Đơn hàng ${payload.orderId} đã được hoàn tất.`,
     };
   }
 
   if (eventName === 'review.created') {
     return {
-      title: 'Review created',
-      body: `Review ${payload.reviewId} was submitted.`,
+      title: 'Đánh giá mới',
+      body: `Đánh giá ${payload.reviewId} đã được gửi.`,
     };
   }
 
   if (eventName === 'chat.message.sent') {
     return {
-      title: 'New message',
-      body: 'You have a new message.',
+      title: 'Tin nhắn mới',
+      body: 'Bạn có một tin nhắn mới.',
     };
   }
 
   if (eventName === 'catalog.product.created') {
     return {
-      title: 'New product',
-      body: `Product ${payload.productId} was created.`,
+      title: 'Sản phẩm mới',
+      body: `Sản phẩm ${payload.productId} đã được tạo.`,
     };
   }
 
   if (eventName === 'catalog.product.updated') {
     return {
-      title: 'Product updated',
-      body: `Product ${payload.productId} was updated.`,
+      title: 'Cập nhật sản phẩm',
+      body: `Sản phẩm ${payload.productId} đã được cập nhật.`,
     };
   }
 
   return {
-    title: 'Notification',
-    body: `Event ${eventName} received.`,
+    title: 'Thông báo',
+    body: `Đã nhận được sự kiện ${eventName}.`,
   };
 }
 

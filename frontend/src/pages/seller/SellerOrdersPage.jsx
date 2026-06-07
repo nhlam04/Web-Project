@@ -80,7 +80,7 @@ export default function SellerOrdersPage() {
       <header className="ops-header">
         <div>
           <h1>Đơn hàng người bán</h1>
-          <p>{sellerId ? `Seller ID: ${sellerId}` : 'Cần tài khoản SELLER để xem đơn.'}</p>
+          <p>{sellerId ? `ID người bán: ${sellerId}` : 'Cần tài khoản NGƯỜI BÁN để xem đơn hàng.'}</p>
         </div>
         <div className="ops-kpi">
           <span className="ops-muted">Giá trị</span>
@@ -102,7 +102,7 @@ export default function SellerOrdersPage() {
       </div>
 
       <Card className="ops-grid">
-        <Input label="Seller ID" value={sellerId || 'Chưa có seller đăng nhập'} readOnly />
+        <Input label="ID Người bán" value={sellerId || 'Chưa có người bán đăng nhập'} readOnly />
         <Select label="Trạng thái" value={status} onChange={(event) => setStatus(event.target.value)}>
           <option value="">Tất cả</option>
           {statuses.map((item) => <option key={item} value={item}>{item}</option>)}
@@ -113,14 +113,14 @@ export default function SellerOrdersPage() {
       </Card>
 
       {loading ? <Skeleton className="card" /> : null}
-      {!loading && !orders.length ? <EmptyState title="Không có đơn fulfillment" description="Seller chỉ thấy đơn hàng có product sellerId khớp với IAM user ID." /> : null}
+      {!loading && !orders.length ? <EmptyState title="Không có đơn giao hàng" description="Người bán chỉ có thể xem các đơn hàng chứa sản phẩm của mình." /> : null}
 
       {!loading && orders.length ? (
         <div className="ops-table-wrap">
           <table className="ops-table">
             <thead>
               <tr>
-                <th>Fulfillment</th>
+                <th>Mã giao hàng</th>
                 <th>Trạng thái</th>
                 <th>Sản phẩm</th>
                 <th>Tổng</th>
@@ -136,7 +136,7 @@ export default function SellerOrdersPage() {
                   <tr key={order.id}>
                     <td>
                       <strong>{order.id}</strong>
-                      <div className="ops-muted ops-small">Order: {order.orderId}</div>
+                      <div className="ops-muted ops-small">Đơn hàng: {order.orderId}</div>
                     </td>
                     <td><OrderStatusBadge status={order.status} /></td>
                     <td>{(order.items || []).map((item) => <div key={item.productId}>{item.name || item.productId} x {item.quantity}</div>)}</td>

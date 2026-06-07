@@ -18,7 +18,6 @@ export default function FeaturedProducts({
       <div className="landing-section-head">
         <div>
           <h2>Sản phẩm nổi bật</h2>
-          <p>Tải từ endpoint sản phẩm đầu tiên của Catalog Service.</p>
         </div>
       </div>
 
