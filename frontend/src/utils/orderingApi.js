@@ -138,6 +138,7 @@ export {
   createCart,
   getCart,
   getOrCreateCart,
+  resolveSellerId,
   addProductToCart,
   updateCartItemQuantity,
   removeCartItem,
