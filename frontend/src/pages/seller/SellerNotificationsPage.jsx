@@ -52,7 +52,6 @@ export default function SellerNotificationsPage() {
       <header className="ops-header">
         <div>
           <h1>Thông báo seller</h1>
-          <p>User ID: {userId}</p>
         </div>
         <div className="ops-kpi">
           <span className="ops-muted">Chưa đọc</span>
@@ -74,7 +73,7 @@ export default function SellerNotificationsPage() {
         <Button variant="secondary" onClick={markAll}>Đánh dấu tất cả đã đọc</Button>
       </Card>
 
-      {!notifications.length ? <EmptyState title="Không có thông báo" description="Thông báo seller sẽ xuất hiện tại đây." /> : null}
+      {!notifications.length ? <EmptyState title="Không có thông báo" description="Thông báo người bán sẽ xuất hiện tại đây." /> : null}
 
       <div className="ops-stack">
         {notifications.map((item) => (
@@ -83,7 +82,7 @@ export default function SellerNotificationsPage() {
               <div>
                 <h2>{item.title}</h2>
                 <p>{item.body}</p>
-                <p className="ops-muted ops-small">{item.eventName} | {new Date(item.createdAt).toLocaleString()}</p>
+                <p className="ops-muted ops-small">{new Date(item.createdAt).toLocaleString('vi-VN')}</p>
               </div>
               <Badge variant={item.readAt ? 'neutral' : 'warning'}>{item.readAt ? 'Đã đọc' : 'Chưa đọc'}</Badge>
             </div>

@@ -119,7 +119,7 @@ const ProductList = () => {
   return (
     <PageShell
       title="Sản phẩm"
-      subtitle={selectedCategory ? `Danh mục: ${selectedCategory.product_type || selectedCategory.name}` : 'Tìm kiếm và lọc sản phẩm trên toàn bộ catalog.'}
+      subtitle={selectedCategory ? `Danh mục: ${selectedCategory.product_type || selectedCategory.name}` : ''}
     >
       <style>{`
         .product-page { width: 100%; margin: 0 auto; padding: 18px 0 40px; }

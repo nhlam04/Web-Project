@@ -37,21 +37,14 @@ const OrderListPage = () => {
       {error ? <ErrorState title="Không thể tải đơn hàng" description={error} /> : null}
       {!user ? (
         <Card className="ds-row" style={{ marginBottom: 16 }}>
-          <div style={{ flex: '1 1 260px' }}>
-            <Input
-              label="User ID demo"
-              value={userId}
-              onChange={(e) => setUserId(e.target.value)}
-            />
+          <div>
+            <strong>Đơn hàng demo</strong>
+            <p className="ops-muted ops-small" style={{ margin: '4px 0 0' }}>Đang xem đơn hàng của tài khoản khách.</p>
           </div>
           <Button onClick={() => loadOrders(userId)}>Tải lại</Button>
         </Card>
       ) : (
         <Card className="ds-row" style={{ marginBottom: 16 }}>
-          <div>
-            <strong>{user.username}</strong>
-            <p className="ops-muted ops-small" style={{ margin: '4px 0 0' }}>Đang xem đơn hàng của tài khoản đăng nhập.</p>
-          </div>
           <Button onClick={() => loadOrders(user.id)}>Tải lại</Button>
         </Card>
       )}
@@ -61,7 +54,7 @@ const OrderListPage = () => {
           <Skeleton className="card" />
         </div>
       ) : null}
-      {!loading && !orders.length ? <EmptyState title="Chưa có đơn hàng" description="Đơn hàng mới sẽ xuất hiện sau khi checkout thành công." /> : null}
+      {!loading && !orders.length ? <EmptyState title="Chưa có đơn hàng" description="Đơn hàng mới sẽ xuất hiện sau khi đặt hàng thành công." /> : null}
       {!loading && orders.length ? (
         <div className="ops-table-wrap">
           <table className="ops-table">
