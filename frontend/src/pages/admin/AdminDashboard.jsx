@@ -6,7 +6,7 @@ const chartData = [
   { name: 'Catalog', value: 42 },
   { name: 'Orders', value: 18 },
   { name: 'Users', value: 12 },
-  { name: 'Shops', value: 5 },
+  { name: 'Sellers', value: 5 },
 ];
 
 export default function AdminDashboard() {
@@ -15,7 +15,7 @@ export default function AdminDashboard() {
       <header className="ops-header">
         <div>
           <h1>Admin dashboard</h1>
-          <p>Quản lý catalog, order, user và shop trên một mặt bằng.</p>
+          <p>Quản lý user và Xem trạng thái hệ thống.</p>
         </div>
       </header>
       <div className="ops-grid">

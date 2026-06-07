@@ -26,6 +26,7 @@ app.use(express.json());
 const PORT = process.env.PORT || 3001;
 const ALLOWED_ACCOUNT_ROLES = new Set(['CUSTOMER', 'SELLER']);
 const ADMIN_MANAGED_ROLES = new Set(['CUSTOMER', 'SELLER', 'ADMIN']);
+const APPROVAL_STATUSES = new Set(['PENDING', 'ACTIVE', 'REJECTED']);
 
 // Tạo kết nối (Pool) tới MySQL
 const pool = mysql.createPool({
@@ -43,6 +44,23 @@ setAuditPool(pool);
 async function ensureIamSchema() {
     await pool.query("ALTER TABLE users MODIFY role VARCHAR(20) DEFAULT 'CUSTOMER'");
     await pool.query("UPDATE users SET role = 'CUSTOMER' WHERE role IS NULL OR role = '' OR role = 'USER'");
+
+    const [approvalColumns] = await pool.query(
+        `SELECT COLUMN_NAME
+         FROM information_schema.COLUMNS
+         WHERE TABLE_SCHEMA = DATABASE()
+           AND TABLE_NAME = 'users'
+           AND COLUMN_NAME = 'approval_status'`
+    );
+
+    if (approvalColumns.length === 0) {
+        // Existing accounts should keep working after the migration.
+        await pool.query("ALTER TABLE users ADD COLUMN approval_status VARCHAR(20) NOT NULL DEFAULT 'ACTIVE'");
+        // New registrations are pending until an admin approves them.
+        await pool.query("ALTER TABLE users ALTER approval_status SET DEFAULT 'PENDING'");
+    }
+
+    await pool.query("UPDATE users SET approval_status = 'ACTIVE' WHERE approval_status IS NULL OR approval_status = ''");
 }
 
 // API Kiểm tra trạng thái & DB
@@ -209,13 +227,13 @@ app.post('/register', registerLimiter, async (req, res) => {
 
         // 2. Lưu user vào DB
         await conn.query(
-            'INSERT INTO users (id, username, password_hash, role) VALUES (?, ?, ?, ?)', 
-            [userId, sanitizedUsername, hashedPassword, requestedRole]
+            'INSERT INTO users (id, username, password_hash, role, approval_status) VALUES (?, ?, ?, ?, ?)', 
+            [userId, sanitizedUsername, hashedPassword, requestedRole, 'PENDING']
         );
 
         // 3. Tạo sự kiện và lưu vào bảng Outbox
         const eventId = uuidv4();
-        const payload = JSON.stringify({ userId, username: sanitizedUsername, role: requestedRole, action: 'UserCreated' });
+        const payload = JSON.stringify({ userId, username: sanitizedUsername, role: requestedRole, approvalStatus: 'PENDING', action: 'UserRegisteredPendingApproval' });
         
         await conn.query(
             'INSERT INTO outbox_events (id, event_type, payload) VALUES (?, ?, ?)',
@@ -231,11 +249,11 @@ app.post('/register', registerLimiter, async (req, res) => {
             eventAction: 'REGISTER_SUCCESS',
             ipAddress: getClientIp(req),
             userAgent: getUserAgent(req),
-            requestData: { username: sanitizedUsername, role: requestedRole },
+            requestData: { username: sanitizedUsername, role: requestedRole, approvalStatus: 'PENDING' },
             responseStatus: 201
         });
         
-        res.status(201).json({ message: 'Dang ky thanh cong va da ghi nhan su kien!', userId, role: requestedRole });
+        res.status(201).json({ message: 'Đăng ký thành công. Tài khoản đang chờ admin duyệt.', userId, role: requestedRole, approvalStatus: 'PENDING' });
     } catch (error) {
         await conn.rollback(); // Có lỗi xảy ra, hủy bỏ mọi thay đổi
         await logAudit({
@@ -306,6 +324,38 @@ app.post('/login', async (req, res) => {
         }
 
         const user = users[0];
+
+        if (user.approval_status === 'PENDING') {
+            await logAudit({
+                userId: user.id,
+                eventType: 'AUTH',
+                eventAction: 'LOGIN_BLOCKED_PENDING_APPROVAL',
+                ipAddress: getClientIp(req),
+                userAgent: getUserAgent(req),
+                requestData: { username: sanitizedUsername },
+                responseStatus: 403
+            });
+
+            return res.status(403).json({
+                error: 'Tài khoản đang chờ admin duyệt.'
+            });
+        }
+
+        if (user.approval_status === 'REJECTED') {
+            await logAudit({
+                userId: user.id,
+                eventType: 'AUTH',
+                eventAction: 'LOGIN_BLOCKED_REJECTED_ACCOUNT',
+                ipAddress: getClientIp(req),
+                userAgent: getUserAgent(req),
+                requestData: { username: sanitizedUsername },
+                responseStatus: 403
+            });
+
+            return res.status(403).json({
+                error: 'Tài khoản đăng ký đã bị từ chối.'
+            });
+        }
 
         if (user.locked_until && new Date(user.locked_until).getTime() > Date.now()) {
             await logAudit({
@@ -670,6 +720,7 @@ app.get('/admin/users', authenticateToken, authorizeRole('ADMIN'), async (req, r
     const search = String(req.query.search || '').trim();
     const role = String(req.query.role || '').trim().toUpperCase();
     const lockStatus = String(req.query.lockStatus || '').trim().toUpperCase();
+    const approvalStatus = String(req.query.approvalStatus || '').trim().toUpperCase();
 
     const where = [];
     const params = [];
@@ -690,12 +741,18 @@ app.get('/admin/users', authenticateToken, authorizeRole('ADMIN'), async (req, r
         where.push('(locked_until IS NULL OR locked_until <= NOW())');
     }
 
+    if (approvalStatus && APPROVAL_STATUSES.has(approvalStatus)) {
+        where.push('approval_status = ?');
+        params.push(approvalStatus);
+    }
+
     const whereSql = where.length ? `WHERE ${where.join(' AND ')}` : '';
 
     try {
         const [countRows] = await pool.query(`SELECT COUNT(*) AS total FROM users ${whereSql}`, params);
         const [rows] = await pool.query(
-            `SELECT id, username, role, failed_login_attempts AS failedLoginAttempts, locked_until AS lockedUntil,
+            `SELECT id, username, role, approval_status AS approvalStatus,
+                    failed_login_attempts AS failedLoginAttempts, locked_until AS lockedUntil,
                     CASE WHEN locked_until IS NOT NULL AND locked_until > NOW() THEN 1 ELSE 0 END AS isLocked
              FROM users
              ${whereSql}
@@ -710,7 +767,7 @@ app.get('/admin/users', authenticateToken, authorizeRole('ADMIN'), async (req, r
             eventAction: 'USERS_LIST',
             ipAddress: getClientIp(req),
             userAgent: getUserAgent(req),
-            requestData: { search, role, lockStatus, page, limit },
+            requestData: { search, role, lockStatus, approvalStatus, page, limit },
             responseStatus: 200
         });
 
@@ -740,7 +797,8 @@ app.get('/admin/users', authenticateToken, authorizeRole('ADMIN'), async (req, r
 app.get('/admin/users/:id', authenticateToken, authorizeRole('ADMIN'), async (req, res) => {
     try {
         const [rows] = await pool.query(
-            `SELECT id, username, role, failed_login_attempts AS failedLoginAttempts, locked_until AS lockedUntil,
+            `SELECT id, username, role, approval_status AS approvalStatus,
+                    failed_login_attempts AS failedLoginAttempts, locked_until AS lockedUntil,
                     CASE WHEN locked_until IS NOT NULL AND locked_until > NOW() THEN 1 ELSE 0 END AS isLocked
              FROM users
              WHERE id = ?`,
@@ -781,6 +839,35 @@ app.patch('/admin/users/:id/role', authenticateToken, authorizeRole('ADMIN'), as
         });
 
         res.status(200).json({ message: 'Đã cập nhật vai trò người dùng' });
+    } catch (error) {
+        res.status(500).json({ error: error.message });
+    }
+});
+
+app.patch('/admin/users/:id/approval-status', authenticateToken, authorizeRole('ADMIN'), async (req, res) => {
+    const approvalStatus = String(req.body.approvalStatus || '').trim().toUpperCase();
+
+    if (!APPROVAL_STATUSES.has(approvalStatus)) {
+        return res.status(400).json({ error: 'Trạng thái duyệt tài khoản không hợp lệ' });
+    }
+
+    try {
+        const [result] = await pool.query('UPDATE users SET approval_status = ? WHERE id = ?', [approvalStatus, req.params.id]);
+        if (result.affectedRows === 0) {
+            return res.status(404).json({ error: 'Không tìm thấy người dùng' });
+        }
+
+        await logAudit({
+            userId: req.user.userId,
+            eventType: 'ADMIN',
+            eventAction: `USER_APPROVAL_${approvalStatus}`,
+            ipAddress: getClientIp(req),
+            userAgent: getUserAgent(req),
+            requestData: { targetUserId: req.params.id, approvalStatus },
+            responseStatus: 200
+        });
+
+        res.status(200).json({ message: 'Đã cập nhật trạng thái duyệt tài khoản' });
     } catch (error) {
         res.status(500).json({ error: error.message });
     }

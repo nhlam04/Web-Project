@@ -19,6 +19,7 @@ CREATE TABLE IF NOT EXISTS users (
     username VARCHAR(50) UNIQUE NOT NULL,
     password_hash TEXT NOT NULL,
     role VARCHAR(20) DEFAULT 'CUSTOMER',
+    approval_status VARCHAR(20) NOT NULL DEFAULT 'PENDING',
     failed_login_attempts INT DEFAULT 0,
     locked_until DATETIME NULL
 );
@@ -63,5 +64,5 @@ CREATE TABLE IF NOT EXISTS audit_logs (
 -- Khởi tạo tài khoản Admin mặc định
 -- Username: admin
 -- Password: admin123
-INSERT IGNORE INTO users (id, username, password_hash, role) 
-VALUES ('admin', 'admin', '$2a$10$5.uJzLklctvaKzrnSbjfte8yU11o0RpYzju1z3EOhMVu/twutVhTm', 'ADMIN');
+INSERT IGNORE INTO users (id, username, password_hash, role, approval_status) 
+VALUES ('admin', 'admin', '$2a$10$CHizdiKafqYEnIy9.871Je21H61T5eTCbU3ZBD1W8ReSkKES44qAy', 'ADMIN', 'ACTIVE');

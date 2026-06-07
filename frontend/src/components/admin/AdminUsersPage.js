@@ -4,9 +4,16 @@ import adminService from '../../services/adminService';
 
 const ROLE_OPTIONS = ['', 'CUSTOMER', 'SELLER', 'ADMIN'];
 const LOCK_STATUS_OPTIONS = [
-  { value: '', label: 'Tất cả trạng thái' },
-  { value: 'UNLOCKED', label: 'Đang hoạt động' },
+  { value: '', label: 'Tất cả trạng thái khóa' },
+  { value: 'UNLOCKED', label: 'Không bị khóa' },
   { value: 'LOCKED', label: 'Đang bị khóa' },
+];
+
+const APPROVAL_STATUS_OPTIONS = [
+  { value: '', label: 'Tất cả trạng thái duyệt' },
+  { value: 'PENDING', label: 'Chưa duyệt' },
+  { value: 'ACTIVE', label: 'Đã duyệt' },
+  { value: 'REJECTED', label: 'Bị từ chối' },
 ];
 
 function formatDateTime(value) {
@@ -25,11 +32,25 @@ function roleVariant(role) {
   return 'info';
 }
 
+function approvalStatusLabel(status) {
+  if (status === 'PENDING') return 'Chưa duyệt';
+  if (status === 'ACTIVE') return 'Đã duyệt';
+  if (status === 'REJECTED') return 'Bị từ chối';
+  return status || '—';
+}
+
+function approvalStatusVariant(status) {
+  if (status === 'PENDING') return 'warning';
+  if (status === 'ACTIVE') return 'success';
+  if (status === 'REJECTED') return 'danger';
+  return 'info';
+}
+
 const AdminUsersPage = () => {
   const [users, setUsers] = useState([]);
   const [pagination, setPagination] = useState({ page: 1, limit: 20, total: 0, totalPages: 1 });
-  const [filters, setFilters] = useState({ search: '', role: '', lockStatus: '' });
-  const [draftFilters, setDraftFilters] = useState({ search: '', role: '', lockStatus: '' });
+  const [filters, setFilters] = useState({ search: '', role: '', lockStatus: '', approvalStatus: '' });
+  const [draftFilters, setDraftFilters] = useState({ search: '', role: '', lockStatus: '', approvalStatus: '' });
   const [loading, setLoading] = useState(true);
   const [busyUserId, setBusyUserId] = useState('');
   const [lockHoursByUser, setLockHoursByUser] = useState({});
@@ -78,7 +99,7 @@ const AdminUsersPage = () => {
   }
 
   function resetFilters() {
-    const empty = { search: '', role: '', lockStatus: '' };
+    const empty = { search: '', role: '', lockStatus: '', approvalStatus: '' };
     setDraftFilters(empty);
     setFilters(empty);
     setPagination((current) => ({ ...current, page: 1 }));
@@ -103,6 +124,11 @@ const AdminUsersPage = () => {
   function handleRoleChange(user, role) {
     if (role === user.role) return;
     runUserAction(user.id, () => adminService.updateUserRole(user.id, role));
+  }
+
+  function handleApprovalStatusChange(user, approvalStatus) {
+    if (approvalStatus === user.approvalStatus) return;
+    runUserAction(user.id, () => adminService.updateUserApprovalStatus(user.id, approvalStatus));
   }
 
   function getLockHours(userId) {
@@ -133,7 +159,7 @@ const AdminUsersPage = () => {
   return (
     <div className="ops-stack">
       <style>{`
-        .admin-users-toolbar { display: grid; grid-template-columns: minmax(220px, 1fr) 180px 200px auto auto; gap: 12px; align-items: end; }
+        .admin-users-toolbar { display: grid; grid-template-columns: minmax(220px, 1fr) 160px 190px 190px auto auto; gap: 12px; align-items: end; }
         .admin-users-summary { display: flex; gap: 12px; flex-wrap: wrap; align-items: center; justify-content: space-between; }
         .admin-users-id { max-width: 260px; word-break: break-all; color: #64748b; font-size: 12px; }
         .admin-users-pagination { display: flex; justify-content: flex-end; align-items: center; gap: 10px; margin-top: 14px; }
@@ -179,7 +205,16 @@ const AdminUsersPage = () => {
               onChange={(event) => updateDraftFilter('lockStatus', event.target.value)}
             >
               {LOCK_STATUS_OPTIONS.map((item) => (
-                <option key={item.value || 'all'} value={item.value}>{item.label}</option>
+                <option key={item.value || 'all-lock'} value={item.value}>{item.label}</option>
+              ))}
+            </Select>
+            <Select
+              label="Trạng thái duyệt"
+              value={draftFilters.approvalStatus}
+              onChange={(event) => updateDraftFilter('approvalStatus', event.target.value)}
+            >
+              {APPROVAL_STATUS_OPTIONS.map((item) => (
+                <option key={item.value || 'all-approval'} value={item.value}>{item.label}</option>
               ))}
             </Select>
             <Button type="submit">Lọc</Button>
@@ -226,7 +261,8 @@ const AdminUsersPage = () => {
                   <tr>
                     <th>Người dùng</th>
                     <th>Vai trò</th>
-                    <th>Trạng thái</th>
+                    <th>Trạng thái duyệt</th>
+                    <th>Trạng thái hoạt động</th>
                     <th>Lỗi đăng nhập</th>
                     <th>Khóa đến</th>
                     <th>Thao tác</th>
@@ -257,8 +293,45 @@ const AdminUsersPage = () => {
                           </div>
                         </td>
                         <td>
+                          <div className="ops-stack" style={{ gap: 8 }}>
+                            <Badge variant={approvalStatusVariant(user.approvalStatus)}>
+                              {approvalStatusLabel(user.approvalStatus)}
+                            </Badge>
+                            {user.approvalStatus === 'PENDING' ? (
+                              <div className="admin-users-actions">
+                                <Button
+                                  type="button"
+                                  size="sm"
+                                  disabled={busy}
+                                  onClick={() => handleApprovalStatusChange(user, 'ACTIVE')}
+                                >
+                                  Duyệt
+                                </Button>
+                                <Button
+                                  type="button"
+                                  size="sm"
+                                  variant="danger"
+                                  disabled={busy}
+                                  onClick={() => handleApprovalStatusChange(user, 'REJECTED')}
+                                >
+                                  Từ chối
+                                </Button>
+                              </div>
+                            ) : user.approvalStatus === 'REJECTED' ? (
+                              <Button
+                                type="button"
+                                size="sm"
+                                disabled={busy}
+                                onClick={() => handleApprovalStatusChange(user, 'ACTIVE')}
+                              >
+                                Duyệt lại
+                              </Button>
+                            ) : null}
+                          </div>
+                        </td>
+                        <td>
                           <Badge variant={user.isLocked ? 'danger' : 'success'}>
-                            {user.isLocked ? 'Đang bị khóa' : 'Đang hoạt động'}
+                            {user.isLocked ? 'Đang bị khoá' : 'Đang hoạt động'}
                           </Badge>
                         </td>
                         <td>{user.failedLoginAttempts ?? 0}</td>

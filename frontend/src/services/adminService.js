@@ -27,6 +27,10 @@ export const adminService = {
     return apiClient.patch(`${API_BASES.auth}/admin/users/${userId}/role`, { role });
   },
 
+  updateUserApprovalStatus(userId, approvalStatus) {
+    return apiClient.patch(`${API_BASES.auth}/admin/users/${userId}/approval-status`, { approvalStatus });
+  },
+
   lockUser(userId, hours = 24) {
     return apiClient.patch(`${API_BASES.auth}/admin/users/${userId}/lock`, { hours });
   },

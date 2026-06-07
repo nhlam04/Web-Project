@@ -1,16 +1,12 @@
 import React from 'react';
 import { Link, NavLink, Outlet, useNavigate } from 'react-router-dom';
-import { BarChart3, Bell, Boxes, ClipboardList, LayoutDashboard, LogOut, PackagePlus, Settings, Store, User, Users } from 'lucide-react';
+import { Bell, Boxes, ClipboardList, LayoutDashboard, LogOut, PackagePlus, Settings, User, Users } from 'lucide-react';
 import { useAuth } from '../components/auth/AuthProvider';
 
 const linksByRole = {
   admin: [
     { to: '/admin', label: 'Tổng quan', icon: LayoutDashboard, end: true },
-    { to: '/admin/products', label: 'Sản phẩm', icon: Boxes },
-    { to: '/admin/categories', label: 'Danh mục', icon: BarChart3 },
-    { to: '/admin/orders', label: 'Đơn hàng', icon: ClipboardList },
     { to: '/admin/users', label: 'Người dùng', icon: Users },
-    { to: '/admin/shops', label: 'Cửa hàng', icon: Store },
   ],
   seller: [
     { to: '/seller', label: 'Tổng quan', icon: LayoutDashboard, end: true },

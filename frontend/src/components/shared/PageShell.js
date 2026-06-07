@@ -1,4 +1,5 @@
 import React from 'react';
+import { ShoppingCart } from 'lucide-react';
 import { Link, NavLink, useLocation, useNavigate } from 'react-router-dom';
 import CartDrawer from '../cart/CartDrawer';
 import { useCart } from '../cart/CartProvider';
@@ -32,7 +33,6 @@ function getPrimaryLinks(auth) {
       categoryLink,
       productLink,
       { to: '/orders', label: 'Đơn hàng' },
-      { to: '/notifications', label: 'Thông báo' },
       { to: '/profile', label: 'Hồ sơ' },
     ];
   }
@@ -108,7 +108,9 @@ const PageShell = ({ children, title, subtitle, actions = [], compact = false, h
         .ops-account { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; justify-content: flex-end; font-size: 13px; color: #64748b; }
         .ops-account-main { display: inline-flex; align-items: center; gap: 8px; min-width: 0; }
         .ops-user-chip { max-width: 170px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: #334155; font-weight: 800; }
-        .ops-cart-btn { position: relative; }
+        .ops-cart-btn { position: relative; gap: 8px; }
+        .ops-icon-btn { position: relative; width: 40px; height: 40px; border-radius: 6px; border: 1px solid #cbd5e1; background: #ffffff; color: #334155; display: inline-flex; align-items: center; justify-content: center; text-decoration: none; }
+        .ops-icon-btn:hover { color: #1d4ed8; background: #eff6ff; border-color: #bfdbfe; }
         .ops-cart-count { position: absolute; top: -8px; right: -8px; min-width: 18px; height: 18px; padding: 0 5px; border-radius: 999px; background: #dc2626; color: #fff; font-size: 11px; font-weight: 900; display: inline-flex; align-items: center; justify-content: center; }
         .ops-main { width: 100%; max-width: ${fullBleed ? 'none' : 'var(--app-content-max)'}; margin: 0 auto; padding: ${fullBleed ? '0' : compact ? '18px var(--app-page-pad) 56px' : '26px var(--app-page-pad) 56px'}; flex: 1; }
         .ops-content { min-width: 0; }
@@ -174,6 +176,7 @@ const PageShell = ({ children, title, subtitle, actions = [], compact = false, h
             <div className="ops-account">
               {showCart ? (
                 <button className="ops-button ghost ops-cart-btn" onClick={openCart} type="button" aria-label="Mở giỏ hàng">
+                  <ShoppingCart size={18} aria-hidden="true" />
                   Giỏ hàng
                   {cartCount ? <span className="ops-cart-count">{cartCount}</span> : null}
                 </button>

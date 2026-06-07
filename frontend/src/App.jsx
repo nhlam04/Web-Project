@@ -25,11 +25,7 @@ import ReturnPolicy from './pages/customer/ReturnPolicy';
 import PrivacyPolicy from './pages/customer/PrivacyPolicy';
 import BuyingGuide from './pages/customer/BuyingGuide';
 import AdminDashboard from './pages/admin/AdminDashboard';
-import ProductManagement from './pages/admin/ProductManagement';
-import CategoryManagement from './pages/admin/CategoryManagement';
-import OrderManagement from './pages/admin/OrderManagement';
 import UserManagement from './pages/admin/UserManagement';
-import ShopManagement from './pages/admin/ShopManagement';
 import SellerDashboard from './pages/seller/SellerDashboard';
 import SellerOrdersPage from './pages/seller/SellerOrdersPage';
 import SellerProductsPage from './pages/seller/SellerProductsPage';
@@ -71,11 +67,7 @@ export default function App() {
 
             <Route path="/admin" element={<RequireRole roles={['ADMIN']}><DashboardLayout role="admin" /></RequireRole>}>
               <Route index element={<AdminDashboard />} />
-              <Route path="products" element={<ProductManagement />} />
-              <Route path="categories" element={<CategoryManagement />} />
-              <Route path="orders" element={<OrderManagement />} />
               <Route path="users" element={<UserManagement />} />
-              <Route path="shops" element={<ShopManagement />} />
             </Route>
 
             <Route path="/seller" element={<RequireRole roles={['SELLER']}><DashboardLayout role="seller" /></RequireRole>}>
