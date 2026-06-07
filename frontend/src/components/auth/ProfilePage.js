@@ -22,7 +22,6 @@ const ProfilePage = () => {
       <div className="ops-grid">
         <section className="ops-card ops-stack">
           <h2>Thông tin tài khoản</h2>
-          <p><strong>User ID:</strong> {user?.id || getActiveUserId()}</p>
           <p><strong>Tên đăng nhập:</strong> {user?.username || 'Chưa đăng nhập'}</p>
           <p><strong>Vai trò:</strong> {user?.role || 'Chưa có'}</p>
           <div className="ops-actions">

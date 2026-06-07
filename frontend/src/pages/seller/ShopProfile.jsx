@@ -14,7 +14,6 @@ export default function ShopProfile() {
         </div>
       </header>
       <Card className="ops-stack">
-        <div><strong>Shop ID:</strong> {auth.user?.id || 'Chưa có'}</div>
         <div><strong>Chủ shop:</strong> {auth.user?.username || 'Chưa có'}</div>
         <div><strong>Trạng thái:</strong> <span className="ops-badge success">Đang hoạt động</span></div>
       </Card>
