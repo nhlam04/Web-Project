@@ -78,6 +78,15 @@ async function getProfile() {
   return payload;
 }
 
+async function changePassword({ currentPassword, newPassword, confirmPassword }) {
+  const response = await fetch(`${AUTH_BASE_URL}/change-password`, {
+    method: 'PATCH',
+    headers: authHeaders({ 'Content-Type': 'application/json' }),
+    body: JSON.stringify({ currentPassword, newPassword, confirmPassword }),
+  });
+  return parseApiResponse(response, 'Không thể đổi mật khẩu');
+}
+
 function logout() {
   localStorage.removeItem(ACCESS_TOKEN_KEY);
   localStorage.removeItem(REFRESH_TOKEN_KEY);
@@ -185,6 +194,7 @@ export {
   DEMO_SELLER_ID,
   DEMO_USER_ID,
   cancelOrder,
+  changePassword,
   getActiveUserId,
   getOrder,
   getProfile,

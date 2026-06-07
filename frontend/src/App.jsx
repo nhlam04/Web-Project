@@ -25,6 +25,7 @@ import ReturnPolicy from './pages/customer/ReturnPolicy';
 import PrivacyPolicy from './pages/customer/PrivacyPolicy';
 import BuyingGuide from './pages/customer/BuyingGuide';
 import AdminDashboard from './pages/admin/AdminDashboard';
+import AdminChangePasswordPage from './pages/admin/AdminChangePasswordPage';
 import UserManagement from './pages/admin/UserManagement';
 import SellerDashboard from './pages/seller/SellerDashboard';
 import SellerOrdersPage from './pages/seller/SellerOrdersPage';
@@ -67,6 +68,7 @@ export default function App() {
             <Route path="/admin" element={<RequireRole roles={['ADMIN']}><DashboardLayout role="admin" /></RequireRole>}>
               <Route index element={<AdminDashboard />} />
               <Route path="users" element={<UserManagement />} />
+              <Route path="change-password" element={<AdminChangePasswordPage />} />
             </Route>
 
             <Route path="/seller" element={<RequireRole roles={['SELLER']}><DashboardLayout role="seller" /></RequireRole>}>

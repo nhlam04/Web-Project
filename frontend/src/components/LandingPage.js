@@ -152,11 +152,28 @@ const LandingPage = () => {
         .landing-section-head { display: flex; justify-content: space-between; gap: 20px; align-items: end; margin-bottom: 22px; flex-wrap: wrap; }
         .landing-section-head h2 { margin: 0 0 6px; color: #0f172a; font-size: 30px; letter-spacing: 0; }
         .landing-section-head p { margin: 0; color: #64748b; }
-        .landing-category-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(210px, 1fr)); gap: 16px; }
-        .landing-category-card { display: grid; gap: 8px; padding: 18px; min-height: 112px; background: #ffffff; border: 1px solid #e5e7eb; border-radius: 8px; cursor: pointer; text-align: left; }
-        .landing-category-card:hover { border-color: #93c5fd; box-shadow: 0 10px 24px rgba(15, 23, 42, .08); }
-        .landing-category-card strong { color: #0f172a; font-size: 18px; }
-        .landing-category-card span { color: #64748b; font-size: 14px; }
+        .landing-category-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(230px, 1fr)); gap: 18px; }
+        .landing-category-card { --tone: #2563eb; --tone-soft: #dbeafe; position: relative; display: grid; grid-template-columns: auto 1fr auto; align-items: center; gap: 14px; min-height: 116px; padding: 18px; overflow: hidden; background: linear-gradient(135deg, #ffffff 0%, #f8fafc 100%); border: 1px solid #e2e8f0; border-radius: 18px; cursor: pointer; text-align: left; box-shadow: 0 12px 30px rgba(15, 23, 42, .06); transition: transform 180ms ease, border-color 180ms ease, box-shadow 180ms ease; }
+        .landing-category-card::before { content: ""; position: absolute; inset: auto -34px -44px auto; width: 128px; height: 128px; border-radius: 999px; background: var(--tone-soft); opacity: .8; transition: transform 180ms ease, opacity 180ms ease; }
+        .landing-category-card:hover { transform: translateY(-4px); border-color: color-mix(in srgb, var(--tone) 45%, #ffffff); box-shadow: 0 20px 38px rgba(15, 23, 42, .12); }
+        .landing-category-card:hover::before { transform: scale(1.08); opacity: 1; }
+        .landing-category-icon { position: relative; z-index: 1; width: 56px; height: 56px; display: inline-grid; place-items: center; border-radius: 16px; color: var(--tone); background: var(--tone-soft); box-shadow: inset 0 0 0 1px rgba(255, 255, 255, .75); }
+        .landing-category-content { position: relative; z-index: 1; display: grid; gap: 5px; min-width: 0; }
+        .landing-category-content strong { color: #0f172a; font-size: 17px; line-height: 1.25; }
+        .landing-category-content small { color: #64748b; font-size: 13px; font-weight: 700; }
+        .landing-category-arrow { position: relative; z-index: 1; width: 34px; height: 34px; display: inline-grid; place-items: center; border-radius: 999px; color: var(--tone); background: #ffffff; font-size: 20px; font-weight: 900; box-shadow: 0 8px 20px rgba(15, 23, 42, .08); transition: transform 180ms ease; }
+        .landing-category-card:hover .landing-category-arrow { transform: translateX(3px); }
+        .landing-category-skeleton { min-height: 116px; border-radius: 18px; }
+        .landing-category-card.tone-blue { --tone: #2563eb; --tone-soft: #dbeafe; }
+        .landing-category-card.tone-pink { --tone: #db2777; --tone-soft: #fce7f3; }
+        .landing-category-card.tone-cyan { --tone: #0891b2; --tone-soft: #cffafe; }
+        .landing-category-card.tone-amber { --tone: #d97706; --tone-soft: #fef3c7; }
+        .landing-category-card.tone-indigo { --tone: #4f46e5; --tone-soft: #e0e7ff; }
+        .landing-category-card.tone-emerald { --tone: #059669; --tone-soft: #d1fae5; }
+        .landing-category-card.tone-violet { --tone: #7c3aed; --tone-soft: #ede9fe; }
+        .landing-category-card.tone-rose { --tone: #e11d48; --tone-soft: #ffe4e6; }
+        .landing-category-card.tone-slate { --tone: #475569; --tone-soft: #e2e8f0; }
+        .landing-category-card.tone-red { --tone: #dc2626; --tone-soft: #fee2e2; }
         .landing-product-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, 240px), 1fr)); gap: 24px; align-items: stretch; }
         .landing-product-card { display: flex; flex-direction: column; min-height: 100%; background: #ffffff; border: 1px solid #e5e7eb; border-radius: 8px; overflow: hidden; }
         .landing-product-card:hover { border-color: #93c5fd; box-shadow: 0 12px 24px rgba(15, 23, 42, .08); }

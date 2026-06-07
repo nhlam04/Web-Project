@@ -741,6 +741,125 @@ app.get('/me', authenticateToken, async (req, res) => {
     }
 });
 
+app.patch('/change-password', authenticateToken, async (req, res) => {
+    const { currentPassword, newPassword, confirmPassword } = req.body;
+
+    const fieldsCheck = validateRequiredFields(req.body, ['currentPassword', 'newPassword', 'confirmPassword']);
+    if (!fieldsCheck.valid) {
+        await logAudit({
+            userId: req.user.userId,
+            eventType: 'AUTH',
+            eventAction: 'PASSWORD_CHANGE_FAILED',
+            ipAddress: getClientIp(req),
+            userAgent: getUserAgent(req),
+            requestData: { reason: fieldsCheck.error },
+            responseStatus: 400
+        });
+        return res.status(400).json({ error: fieldsCheck.error });
+    }
+
+    const passwordCheck = validatePassword(newPassword);
+    if (!passwordCheck.valid) {
+        await logAudit({
+            userId: req.user.userId,
+            eventType: 'AUTH',
+            eventAction: 'PASSWORD_CHANGE_FAILED',
+            ipAddress: getClientIp(req),
+            userAgent: getUserAgent(req),
+            requestData: { reason: passwordCheck.error },
+            responseStatus: 400
+        });
+        return res.status(400).json({ error: passwordCheck.error });
+    }
+
+    if (newPassword !== confirmPassword) {
+        await logAudit({
+            userId: req.user.userId,
+            eventType: 'AUTH',
+            eventAction: 'PASSWORD_CHANGE_FAILED',
+            ipAddress: getClientIp(req),
+            userAgent: getUserAgent(req),
+            requestData: { reason: 'Password confirmation mismatch' },
+            responseStatus: 400
+        });
+        return res.status(400).json({ error: 'Xác nhận mật khẩu mới không khớp' });
+    }
+
+    if (currentPassword === newPassword) {
+        await logAudit({
+            userId: req.user.userId,
+            eventType: 'AUTH',
+            eventAction: 'PASSWORD_CHANGE_FAILED',
+            ipAddress: getClientIp(req),
+            userAgent: getUserAgent(req),
+            requestData: { reason: 'New password is the same as current password' },
+            responseStatus: 400
+        });
+        return res.status(400).json({ error: 'Mật khẩu mới phải khác mật khẩu hiện tại' });
+    }
+
+    try {
+        const [users] = await pool.query('SELECT id, username, password_hash FROM users WHERE id = ?', [req.user.userId]);
+        if (users.length === 0) {
+            await logAudit({
+                userId: req.user.userId,
+                eventType: 'AUTH',
+                eventAction: 'PASSWORD_CHANGE_FAILED',
+                ipAddress: getClientIp(req),
+                userAgent: getUserAgent(req),
+                requestData: { reason: 'User not found' },
+                responseStatus: 404
+            });
+            return res.status(404).json({ error: 'Không tìm thấy thông tin người dùng' });
+        }
+
+        const user = users[0];
+        const isValidPassword = await bcrypt.compare(currentPassword, user.password_hash);
+        if (!isValidPassword) {
+            await logAudit({
+                userId: req.user.userId,
+                eventType: 'AUTH',
+                eventAction: 'PASSWORD_CHANGE_FAILED',
+                ipAddress: getClientIp(req),
+                userAgent: getUserAgent(req),
+                requestData: { username: user.username, reason: 'Invalid current password' },
+                responseStatus: 401
+            });
+            return res.status(401).json({ error: 'Mật khẩu hiện tại không đúng' });
+        }
+
+        const passwordHash = await bcrypt.hash(newPassword, 10);
+        await pool.query(
+            'UPDATE users SET password_hash = ?, failed_login_attempts = 0, locked_until = NULL WHERE id = ?',
+            [passwordHash, req.user.userId]
+        );
+        await pool.query('DELETE FROM refresh_tokens WHERE user_id = ?', [req.user.userId]);
+
+        await logAudit({
+            userId: req.user.userId,
+            eventType: 'AUTH',
+            eventAction: 'PASSWORD_CHANGE_SUCCESS',
+            ipAddress: getClientIp(req),
+            userAgent: getUserAgent(req),
+            requestData: { username: user.username },
+            responseStatus: 200
+        });
+
+        res.status(200).json({ message: 'Đổi mật khẩu thành công. Vui lòng đăng nhập lại.' });
+    } catch (error) {
+        await logAudit({
+            userId: req.user.userId,
+            eventType: 'AUTH',
+            eventAction: 'PASSWORD_CHANGE_ERROR',
+            ipAddress: getClientIp(req),
+            userAgent: getUserAgent(req),
+            requestData: { error: error.message },
+            responseStatus: 500
+        });
+        res.status(500).json({ error: error.message });
+    }
+});
+
 const amqp = require('amqplib');
 
 // -----------------------------------------

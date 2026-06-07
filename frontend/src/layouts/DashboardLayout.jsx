@@ -1,12 +1,13 @@
 import React from 'react';
 import { Link, NavLink, Outlet, useNavigate } from 'react-router-dom';
-import { Bell, Boxes, ClipboardList, LayoutDashboard, LogOut, PackagePlus, User, Users } from 'lucide-react';
+import { Bell, Boxes, ClipboardList, KeyRound, LayoutDashboard, LogOut, PackagePlus, User, Users } from 'lucide-react';
 import { useAuth } from '../components/auth/AuthProvider';
 
 const linksByRole = {
   admin: [
     { to: '/admin', label: 'Tổng quan', icon: LayoutDashboard, end: true },
     { to: '/admin/users', label: 'Người dùng', icon: Users },
+    { to: '/admin/change-password', label: 'Đổi mật khẩu', icon: KeyRound },
   ],
   seller: [
     { to: '/seller', label: 'Tổng quan', icon: LayoutDashboard, end: true },
