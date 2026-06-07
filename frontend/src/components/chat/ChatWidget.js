@@ -40,29 +40,70 @@ const ChatWidget = () => {
   }, [isAuthenticated, currentUser]);
 
   useEffect(() => {
+    function handleOpenChat(e) {
+      const { sellerId } = e.detail;
+      setIsOpen(true);
+      
+      setUsers((prev) => {
+        const exists = prev.find(u => String(u.id) === String(sellerId));
+        if (exists) {
+          setSelectedUser(exists);
+          return prev;
+        } else {
+          // Add a temporary user entry for the seller if not in the list
+          const newSeller = { id: sellerId, username: `Người bán (${String(sellerId).substring(0,6)})` };
+          setSelectedUser(newSeller);
+          return [newSeller, ...prev];
+        }
+      });
+    }
+
+    window.addEventListener('openChatWithSeller', handleOpenChat);
+    return () => window.removeEventListener('openChatWithSeller', handleOpenChat);
+  }, []);
+
+  useEffect(() => {
     if (!isAuthenticated || !currentUser || !isOpen || users.length || isLoadingUsers) return;
 
     setIsLoadingUsers(true);
     setLoadError('');
-    fetch(`${USERS_API_BASE_URL}/users`)
-      .then((res) => {
+    
+    async function fetchUsers() {
+      try {
+        const res = await fetch(`${USERS_API_BASE_URL}/users`);
         if (!res.ok) throw new Error('Chat users API unavailable');
-        return res.json();
-      })
-      .then((data) => {
+        const data = await res.json();
         const normalized = Array.isArray(data) ? data : (Array.isArray(data?.data) ? data.data : []);
-        setUsers(normalized);
-        const otherUsers = normalized.filter(u => String(u.id) !== String(currentUser?.id));
-        setSelectedUser(otherUsers.length > 0 ? otherUsers[0] : normalized[0] || null);
-        if (!normalized.length) setLoadError('Chat tạm thời không khả dụng.');
-      })
-      .catch((err) => {
+        
+        let chattedUserIds = [];
+        try {
+          const chatUsersRes = await fetch(`${CHAT_API_BASE_URL}/api/v1/chat/users/${currentUser.id}`);
+          if (chatUsersRes.ok) {
+            chattedUserIds = await chatUsersRes.json();
+          }
+        } catch (err) {
+          console.error('Lỗi tải danh sách người đã chat:', err);
+        }
+
+        const chattedUsers = normalized.filter(u => chattedUserIds.includes(String(u.id)) && String(u.id) !== String(currentUser.id));
+        setUsers(chattedUsers);
+        
+        if (chattedUsers.length > 0) {
+          setSelectedUser(chattedUsers[0]);
+        } else {
+          setLoadError('Chưa có đoạn chat nào.');
+        }
+      } catch (err) {
         console.error('Lỗi tải users:', err);
         setUsers([]);
         setSelectedUser(null);
         setLoadError('Chat tạm thời không khả dụng.');
-      })
-      .finally(() => setIsLoadingUsers(false));
+      } finally {
+        setIsLoadingUsers(false);
+      }
+    }
+    
+    fetchUsers();
   }, [isAuthenticated, isOpen, users.length, isLoadingUsers, currentUser]);
 
   useEffect(() => {
@@ -166,6 +207,18 @@ const ChatWidget = () => {
     <>
       <style>{`
         .chat-widget { position: fixed; right: 24px; bottom: 24px; z-index: 60; font-family: 'Segoe UI', Tahoma, sans-serif; }
+        
+        .chat-sidebar { position: absolute; right: calc(min(384px, 100vw - 32px) + 16px); bottom: 76px; width: 260px; height: min(520px, calc(100vh - 120px)); background: #f8fafc; border: 1px solid #e5e7eb; border-radius: 8px; box-shadow: 0 12px 40px rgba(15, 23, 42, .15); overflow: hidden; display: flex; flex-direction: column; transform-origin: bottom right; transition: opacity 160ms ease, transform 160ms ease, visibility 160ms ease; }
+        .chat-sidebar.closed { opacity: 0; visibility: hidden; transform: translateX(20px) scale(.97); pointer-events: none; }
+        .chat-sidebar.open { opacity: 1; visibility: visible; transform: translateX(0) scale(1); }
+        .chat-sidebar-header { padding: 14px 16px; background: #fff; border-bottom: 1px solid #e5e7eb; font-weight: 600; color: #0f172a; font-size: 15px; }
+        .chat-sidebar-list { flex: 1; overflow-y: auto; padding: 8px; display: flex; flex-direction: column; gap: 4px; }
+        .chat-contact-box { display: flex; align-items: center; gap: 10px; padding: 10px; border-radius: 6px; cursor: pointer; transition: background 0.2s; border: 1px solid transparent; }
+        .chat-contact-box:hover { background: #e2e8f0; }
+        .chat-contact-box.active { background: #eff6ff; border-color: #bfdbfe; }
+        .chat-contact-avatar { width: 36px; height: 36px; border-radius: 50%; background: #3b82f6; color: #fff; display: flex; align-items: center; justify-content: center; font-weight: 600; flex-shrink: 0; }
+        .chat-contact-name { font-size: 14px; font-weight: 500; color: #1e293b; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+        
         .chat-panel { position: absolute; right: 0; bottom: 76px; width: min(384px, calc(100vw - 32px)); height: min(520px, calc(100vh - 120px)); background: #fff; border: 1px solid #e5e7eb; border-radius: 8px; box-shadow: 0 24px 70px rgba(15, 23, 42, .24); overflow: hidden; display: flex; flex-direction: column; transform-origin: bottom right; transition: opacity 160ms ease, transform 160ms ease, visibility 160ms ease; }
         .chat-panel.closed { opacity: 0; visibility: hidden; transform: scale(.97); pointer-events: none; }
         .chat-panel.open { opacity: 1; visibility: visible; transform: scale(1); }
@@ -178,9 +231,6 @@ const ChatWidget = () => {
         .chat-dot.online { background: #22c55e; }
         .chat-close, .chat-toggle, .chat-send { border: 0; cursor: pointer; display: inline-flex; align-items: center; justify-content: center; }
         .chat-close { width: 32px; height: 32px; border-radius: 6px; color: #fff; background: rgba(255,255,255,.12); font-size: 22px; line-height: 1; }
-        .chat-selectors { padding: 12px; background: #eff6ff; border-bottom: 1px solid #bfdbfe; display: grid; gap: 8px; font-size: 12px; }
-        .chat-select-row { display: flex; justify-content: space-between; align-items: center; gap: 10px; color: #334155; font-weight: 800; }
-        .chat-select-row select { width: 150px; min-width: 0; border: 1px solid #bfdbfe; border-radius: 6px; padding: 6px 8px; background: #fff; color: #0f172a; }
         .chat-messages { flex: 1; min-height: 0; overflow-y: auto; padding: 14px; background: #f8fafc; display: flex; flex-direction: column; gap: 10px; }
         .chat-empty { flex: 1; display: grid; place-items: center; text-align: center; color: #64748b; font-size: 13px; }
         .chat-message-row { display: flex; width: 100%; }
@@ -197,12 +247,39 @@ const ChatWidget = () => {
         .chat-toggle { width: 56px; height: 56px; border-radius: 999px; background: #2563eb; color: #fff; box-shadow: 0 14px 30px rgba(37,99,235,.35); }
         .chat-toggle:hover { background: #1d4ed8; }
         .chat-icon { width: 22px; height: 22px; display: block; }
-        @media (max-width: 520px) {
-          .chat-widget { right: 16px; bottom: 16px; }
-          .chat-panel { bottom: 72px; }
+        @media (max-width: 680px) {
+          .chat-sidebar { display: none; }
         }
       `}</style>
       <div className="chat-widget">
+        
+        {/* Sidebar */}
+        <div className={`chat-sidebar ${isOpen ? 'open' : 'closed'}`}>
+          <div className="chat-sidebar-header">
+            Đoạn chat
+          </div>
+          <div className="chat-sidebar-list">
+            {users.length === 0 && !isLoadingUsers && (
+              <div className="chat-empty">Chưa có đoạn chat nào</div>
+            )}
+            {users.map((user) => (
+              <div 
+                key={user.id} 
+                className={`chat-contact-box ${selectedUser?.id === user.id ? 'active' : ''}`}
+                onClick={() => setSelectedUser(user)}
+              >
+                <div className="chat-contact-avatar">
+                  {user.username?.charAt(0)?.toUpperCase() || '?'}
+                </div>
+                <div className="chat-contact-name">
+                  {user.username}
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+
+        {/* Main Panel */}
         <div className={`chat-panel ${isOpen ? 'open' : 'closed'}`}>
           <div className="chat-head">
             <div className="chat-person">
@@ -218,18 +295,11 @@ const ChatWidget = () => {
             <button className="chat-close" type="button" onClick={() => setIsOpen(false)} aria-label="Đóng chat">x</button>
           </div>
 
-          <div className="chat-selectors">
-            <label className="chat-select-row">
-              <span>Chat với:</span>
-              <select value={selectedUser?.id || ''} onChange={(e) => setSelectedUser(users.find((u) => String(u.id) === e.target.value) || null)}>
-                {users.filter(u => String(u.id) !== String(currentUser.id)).map((user) => <option key={user.id} value={user.id}>{user.username}</option>)}
-              </select>
-            </label>
-          </div>
-
           <div className="chat-messages">
             {loadError ? (
               <div className="chat-empty">{loadError}</div>
+            ) : !selectedUser ? (
+              <div className="chat-empty">Vui lòng chọn một đoạn chat</div>
             ) : activeMessages.length === 0 ? (
               <div className="chat-empty">{isLoadingUsers ? 'Đang tải chat...' : 'Chưa có tin nhắn nào'}</div>
             ) : activeMessages.map((msg, index) => {
@@ -248,24 +318,26 @@ const ChatWidget = () => {
             <div ref={messagesEndRef} />
           </div>
 
-          <div className="chat-form-wrap">
-            <form className="chat-form" onSubmit={handleSendMessage}>
-              <textarea
-                className="chat-input"
-                placeholder="Nhập tin nhắn..."
-                rows="1"
-                value={inputValue}
-                onChange={(event) => setInputValue(event.target.value)}
-                onKeyDown={handleKeyDown}
-                disabled={!isConnected || !canChat}
-              />
-              <button className="chat-send" type="submit" disabled={!isConnected || !inputValue.trim() || !canChat} aria-label="Gửi tin nhắn">
-                <svg className="chat-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8" />
-                </svg>
-              </button>
-            </form>
-          </div>
+          {selectedUser && (
+            <div className="chat-form-wrap">
+              <form className="chat-form" onSubmit={handleSendMessage}>
+                <textarea
+                  className="chat-input"
+                  placeholder="Nhập tin nhắn..."
+                  rows="1"
+                  value={inputValue}
+                  onChange={(event) => setInputValue(event.target.value)}
+                  onKeyDown={handleKeyDown}
+                  disabled={!isConnected || !canChat}
+                />
+                <button className="chat-send" type="submit" disabled={!isConnected || !inputValue.trim() || !canChat} aria-label="Gửi tin nhắn">
+                  <svg className="chat-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8" />
+                  </svg>
+                </button>
+              </form>
+            </div>
+          )}
         </div>
 
         {!isOpen ? (

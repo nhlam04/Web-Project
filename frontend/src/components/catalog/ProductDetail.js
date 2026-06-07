@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { Link, useNavigate, useParams } from 'react-router-dom';
 import { formatVnd } from '../../utils/orderingApi';
+import { resolveSellerId } from '../../utils/orderingApi';
 import { useCart } from '../cart/CartProvider';
 import PageShell from '../shared/PageShell';
 import { Button, Card } from '../shared/designSystem';
@@ -140,6 +141,8 @@ const ProductDetail = () => {
         .add-cart-btn { padding: 14px 30px; background-color: #4f46e5; color: white; border: none; border-radius: 6px; font-size: 16px; font-weight: 600; cursor: pointer; transition: background 0.3s; display: inline-flex; align-items: center; gap: 8px; }
         .add-cart-btn:hover { background-color: #4338ca; }
         .add-cart-btn:disabled { opacity: 0.6; cursor: not-allowed; }
+        .chat-seller-btn { padding: 14px 30px; background-color: #10b981; color: white; border: none; border-radius: 6px; font-size: 16px; font-weight: 600; cursor: pointer; transition: background 0.3s; display: inline-flex; align-items: center; gap: 8px; }
+        .chat-seller-btn:hover { background-color: #059669; }
         .stock-info { font-size: 14px; color: #6b7280; margin-top: 15px; }
 
         .details-tab { margin-top: 32px; background: white; padding: clamp(20px, 4vw, 40px); border-radius: 8px; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05); }
@@ -235,6 +238,16 @@ const ProductDetail = () => {
                 <button className="add-cart-btn" onClick={handleAddToCart} disabled={isCartBusy}>
                   <svg width="20" height="20" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z" /></svg>
                   {isCartBusy ? 'Đang xử lý...' : 'Thêm vào giỏ hàng'}
+                </button>
+                <button 
+                  className="chat-seller-btn" 
+                  onClick={() => {
+                    const sellerId = resolveSellerId(product);
+                    window.dispatchEvent(new CustomEvent('openChatWithSeller', { detail: { sellerId } }));
+                  }}
+                >
+                  <svg width="20" height="20" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-5l-5 5v-5z" /></svg>
+                  Chat với người bán
                 </button>
                 <div className="stock-info">Sản phẩm có sẵn: {product.quantity}</div>
               </div>
