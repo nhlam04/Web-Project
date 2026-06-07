@@ -31,3 +31,12 @@ class MessageModel:
         for msg in messages:
             msg["id"] = str(msg.pop("_id"))
         return messages
+
+    @classmethod
+    async def get_chatted_users(cls, user_id: str):
+        senders = await db.messages.distinct("sender_id", {"receiver_id": user_id})
+        receivers = await db.messages.distinct("receiver_id", {"sender_id": user_id})
+        users = set(senders + receivers)
+        if user_id in users:
+            users.remove(user_id)
+        return list(users)

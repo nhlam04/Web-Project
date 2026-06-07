@@ -41,10 +41,13 @@ const ProductDetail = () => {
         parsedImages = data.images;
       } else if (typeof data.images === 'string') {
         try {
-          parsedImages = JSON.parse(data.images);
+          const parsed = JSON.parse(data.images);
+          parsedImages = Array.isArray(parsed) ? parsed : [parsed];
         } catch (_err) {
           parsedImages = [data.images];
         }
+      } else if (data.images) {
+        parsedImages = [data.images];
       }
 
       if (parsedImages && parsedImages.length > 0) {
@@ -52,6 +55,7 @@ const ProductDetail = () => {
         data.images = parsedImages;
       } else {
         setMainImage('https://via.placeholder.com/500?text=No+Image');
+        data.images = [];
       }
 
       let parsedDesc = data.detailDesc;
@@ -175,7 +179,7 @@ const ProductDetail = () => {
             <div className="main-img-container">
               <img src={mainImage} alt={product.name} />
             </div>
-            {product.images && product.images.length > 0 && (
+            {Array.isArray(product.images) && product.images.length > 0 && (
               <div className="thumbnails">
                 {product.images.map((img, index) => (
                   <div

@@ -1,7 +1,7 @@
 from typing import List
 from fastapi import APIRouter, WebSocket, WebSocketDisconnect
 import json
-from app.services.chat_service import manager, save_message, get_messages
+from app.services.chat_service import manager, save_message, get_messages, get_chatted_users
 from app.schemas.chat import MessageCreate, MessageResponse
 
 router = APIRouter()
@@ -39,3 +39,11 @@ async def get_chat_history(user1_id: str, user2_id: str, limit: int = 50):
     """
     messages = await get_messages(user1_id, user2_id, limit)
     return messages
+
+@router.get("/users/{user_id}", response_model=List[str])
+async def list_chatted_users(user_id: str):
+    """
+    Retrieve a list of user IDs who have chatted with the given user.
+    """
+    users = await get_chatted_users(user_id)
+    return users

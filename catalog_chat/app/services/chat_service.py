@@ -39,3 +39,6 @@ async def save_message(message: MessageCreate):
 
 async def get_messages(user1_id: str, user2_id: str, limit: int = 50):
     return await MessageModel.get_history(user1_id, user2_id, limit)
+
+async def get_chatted_users(user_id: str):
+    return await MessageModel.get_chatted_users(user_id)

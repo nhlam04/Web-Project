@@ -1,7 +1,7 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
 import PageShell from '../../components/shared/PageShell';
-import { Button, Card, EmptyState, Input, Toast } from '../../components/shared/designSystem';
+import { Button, Card, EmptyState, Input, Toast, Select } from '../../components/shared/designSystem';
 import { useCart } from '../../components/cart/CartProvider';
 import { formatPrice } from '../../utils/formatters';
 import {
@@ -12,12 +12,51 @@ import {
 
 export default function Checkout() {
   const { cart, checkout, isBusy, refreshCart } = useCart();
-  const [shippingAddress, setShippingAddress] = useState(() => getStoredShippingAddress());
+  const [shippingAddress, setShippingAddress] = useState(() => {
+    const stored = getStoredShippingAddress() || {};
+    if (!stored.country) stored.country = 'Việt Nam';
+    return stored;
+  });
+  const [provincesData, setProvincesData] = useState([]);
+
+  useEffect(() => {
+    fetch('https://provinces.open-api.vn/api/?depth=3')
+      .then(res => res.json())
+      .then(data => setProvincesData(data))
+      .catch(err => console.error("Could not load provinces", err));
+  }, []);
+
+  const selectedProvince = useMemo(() => {
+    return provincesData.find(p => p.name === shippingAddress.city) || null;
+  }, [provincesData, shippingAddress.city]);
+
+  const districtsData = selectedProvince?.districts || [];
+
+  const selectedDistrict = useMemo(() => {
+    return districtsData.find(d => d.name === shippingAddress.district) || null;
+  }, [districtsData, shippingAddress.district]);
+
+  const wardsData = selectedDistrict?.wards || [];
+
+  function handleCityChange(event) {
+    const city = event.target.value;
+    setShippingAddress((current) => ({ ...current, city, district: '', ward: '' }));
+  }
+
+  function handleDistrictChange(event) {
+    const district = event.target.value;
+    setShippingAddress((current) => ({ ...current, district, ward: '' }));
+  }
+
+  function handleWardChange(event) {
+    const ward = event.target.value;
+    setShippingAddress((current) => ({ ...current, ward }));
+  }
   const [error, setError] = useState('');
   const items = cart?.items || [];
 
   useEffect(() => {
-    refreshCart().catch(() => {});
+    refreshCart().catch(() => { });
   }, [refreshCart]);
 
   const total = useMemo(
@@ -78,30 +117,47 @@ export default function Checkout() {
               onChange={(event) => updateField('line2', event.target.value)}
             />
             <div className="ops-grid">
-              <Input
-                label="Phường/Xã"
-                required
-                value={shippingAddress.ward}
-                onChange={(event) => updateField('ward', event.target.value)}
-              />
-              <Input
-                label="Quận/Huyện"
-                required
-                value={shippingAddress.district}
-                onChange={(event) => updateField('district', event.target.value)}
-              />
-            </div>
-            <div className="ops-grid">
-              <Input
+              <Select
                 label="Tỉnh/Thành phố"
                 required
-                value={shippingAddress.city}
-                onChange={(event) => updateField('city', event.target.value)}
-              />
+                value={shippingAddress.city || ''}
+                onChange={handleCityChange}
+              >
+                <option value="">Chọn Tỉnh/Thành phố</option>
+                {provincesData.map((p) => (
+                  <option key={p.code} value={p.name}>{p.name}</option>
+                ))}
+              </Select>
+              <Select
+                label="Quận/Huyện"
+                required
+                value={shippingAddress.district || ''}
+                onChange={handleDistrictChange}
+                disabled={!selectedProvince}
+              >
+                <option value="">Chọn Quận/Huyện</option>
+                {districtsData.map((d) => (
+                  <option key={d.code} value={d.name}>{d.name}</option>
+                ))}
+              </Select>
+            </div>
+            <div className="ops-grid">
+              <Select
+                label="Phường/Xã"
+                required
+                value={shippingAddress.ward || ''}
+                onChange={handleWardChange}
+                disabled={!selectedDistrict}
+              >
+                <option value="">Chọn Phường/Xã</option>
+                {wardsData.map((w) => (
+                  <option key={w.code} value={w.name}>{w.name}</option>
+                ))}
+              </Select>
               <Input
                 label="Quốc gia"
                 required
-                value={shippingAddress.country}
+                value={shippingAddress.country || 'Việt Nam'}
                 onChange={(event) => updateField('country', event.target.value)}
               />
             </div>

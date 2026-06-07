@@ -52,7 +52,9 @@ const ProductReviews = ({ productId }) => {
     setLoading(true);
     setError('');
     try {
-      setReviews(await listProductReviews(productId));
+      const response = await listProductReviews(productId);
+      const data = Array.isArray(response) ? response : (response?.data || response?.reviews || []);
+      setReviews(Array.isArray(data) ? data : []);
     } catch (err) {
       setError(err.message);
     } finally {

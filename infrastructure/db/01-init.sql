@@ -59,3 +59,9 @@ CREATE TABLE IF NOT EXISTS audit_logs (
     INDEX idx_audit_created_at (created_at),
     FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE SET NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+-- Khởi tạo tài khoản Admin mặc định
+-- Username: admin
+-- Password: admin123
+INSERT IGNORE INTO users (id, username, password_hash, role) 
+VALUES ('admin', 'admin', '$2a$10$5.uJzLklctvaKzrnSbjfte8yU11o0RpYzju1z3EOhMVu/twutVhTm', 'ADMIN');

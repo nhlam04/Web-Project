@@ -6,13 +6,6 @@ import { useCart } from '../cart/CartProvider';
 import { API_BASES } from '../../utils/constants';
 
 const CATALOG_BASE_URL = API_BASES.catalog || 'http://127.0.0.1:8000';
-const FALLBACK_BRANDS = ['Asus', 'Dell', 'HP', 'Lenovo', 'Apple', 'Acer', 'MSI'];
-const FALLBACK_LOCATIONS = ['Hà Nội', 'TP. Hồ Chí Minh', 'Đà Nẵng'];
-
-function uniqueValues(products, key, fallback) {
-  const values = products.map((product) => product[key]).filter(Boolean);
-  return values.length ? Array.from(new Set(values)).sort() : fallback;
-}
 
 const ProductList = () => {
   const navigate = useNavigate();
@@ -25,8 +18,6 @@ const ProductList = () => {
   const [page, setPage] = useState(1);
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedCatalogId, setSelectedCatalogId] = useState(initialCatalogId);
-  const [selectedBrands, setSelectedBrands] = useState([]);
-  const [selectedLocations, setSelectedLocations] = useState([]);
   const [priceFrom, setPriceFrom] = useState('');
   const [priceTo, setPriceTo] = useState('');
   const [statusMessage, setStatusMessage] = useState('');
@@ -75,8 +66,6 @@ const ProductList = () => {
     };
   }, []);
 
-  const availableBrands = useMemo(() => uniqueValues(products, 'brand', FALLBACK_BRANDS), [products]);
-  const availableLocations = useMemo(() => uniqueValues(products, 'location', FALLBACK_LOCATIONS), [products]);
 
   const filteredProducts = useMemo(() => {
     const min = priceFrom === '' ? null : Number(priceFrom);
@@ -88,13 +77,11 @@ const ProductList = () => {
       const productPrice = Number(product.price || product.unitPrice || 0);
       const matchesSearch = !keyword || productName.includes(keyword);
       const matchesCatalog = !selectedCatalogId || String(product.catalog_id) === String(selectedCatalogId);
-      const matchesBrand = !selectedBrands.length || selectedBrands.includes(product.brand);
-      const matchesLocation = !selectedLocations.length || selectedLocations.includes(product.location);
       const matchesMin = min === null || !Number.isFinite(min) || productPrice >= min;
       const matchesMax = max === null || !Number.isFinite(max) || productPrice <= max;
-      return matchesSearch && matchesCatalog && matchesBrand && matchesLocation && matchesMin && matchesMax;
+      return matchesSearch && matchesCatalog && matchesMin && matchesMax;
     });
-  }, [priceFrom, priceTo, products, searchTerm, selectedBrands, selectedCatalogId, selectedLocations]);
+  }, [priceFrom, priceTo, products, searchTerm, selectedCatalogId]);
 
   useEffect(() => {
     setPage(1);
@@ -104,30 +91,16 @@ const ProductList = () => {
   const totalPages = Math.max(1, Math.ceil(filteredProducts.length / limit));
   const startIndex = (page - 1) * limit;
   const currentProducts = filteredProducts.slice(startIndex, startIndex + limit);
-  const hasFilters = Boolean(searchTerm || selectedCatalogId || selectedBrands.length || selectedLocations.length || priceFrom || priceTo);
+  const hasFilters = Boolean(searchTerm || selectedCatalogId || priceFrom || priceTo);
 
   function setCategoryFilter(value) {
     setSelectedCatalogId(value);
     navigate(value ? `/products?catalogId=${value}` : '/products', { replace: true });
   }
 
-  function toggleBrand(brand) {
-    setSelectedBrands((current) => (
-      current.includes(brand) ? current.filter((item) => item !== brand) : [...current, brand]
-    ));
-  }
-
-  function toggleLocation(location) {
-    setSelectedLocations((current) => (
-      current.includes(location) ? current.filter((item) => item !== location) : [...current, location]
-    ));
-  }
-
   function clearFilters() {
     setSearchTerm('');
     setSelectedCatalogId('');
-    setSelectedBrands([]);
-    setSelectedLocations([]);
     setPriceFrom('');
     setPriceTo('');
     navigate('/products', { replace: true });
@@ -204,26 +177,6 @@ const ProductList = () => {
                 <Input label="Từ" type="number" min="0" placeholder="0" value={priceFrom} onChange={(event) => setPriceFrom(event.target.value)} />
                 <Input label="Đến" type="number" min="0" placeholder="5000000" value={priceTo} onChange={(event) => setPriceTo(event.target.value)} />
               </div>
-            </div>
-
-            <div className="filter-section">
-              <h4>Thương hiệu</h4>
-              {availableBrands.map((brand) => (
-                <label key={brand} className="filter-item">
-                  <input type="checkbox" checked={selectedBrands.includes(brand)} onChange={() => toggleBrand(brand)} />
-                  {brand}
-                </label>
-              ))}
-            </div>
-
-            <div className="filter-section">
-              <h4>Nơi bán</h4>
-              {availableLocations.map((location) => (
-                <label key={location} className="filter-item">
-                  <input type="checkbox" checked={selectedLocations.includes(location)} onChange={() => toggleLocation(location)} />
-                  {location}
-                </label>
-              ))}
             </div>
 
             {hasFilters ? (
