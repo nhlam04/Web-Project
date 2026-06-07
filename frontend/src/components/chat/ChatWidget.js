@@ -1,13 +1,13 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { API_BASES } from '../../utils/constants';
-import { useAuthStore } from '../../store/useAuthStore';
+import { useAuth } from '../auth/AuthProvider';
 
 const CHAT_API_BASE_URL = API_BASES.chatHttp;
 const CHAT_WS_BASE_URL = API_BASES.chatWs;
 const USERS_API_BASE_URL = API_BASES.auth;
 
 const ChatWidget = () => {
-  const { user: currentUser } = useAuthStore();
+  const { user: currentUser, isAuthenticated } = useAuth();
   const [isOpen, setIsOpen] = useState(false);
   const [users, setUsers] = useState([]);
   const [selectedUser, setSelectedUser] = useState(null);
@@ -25,7 +25,22 @@ const ChatWidget = () => {
   }, [messages, isOpen]);
 
   useEffect(() => {
-    if (!isOpen || users.length || isLoadingUsers) return;
+    if (isAuthenticated && currentUser) return;
+
+    setIsOpen(false);
+    setUsers([]);
+    setSelectedUser(null);
+    setMessages([]);
+    setIsConnected(false);
+    setInputValue('');
+    setIsLoadingUsers(false);
+    setLoadError('');
+    ws.current?.close();
+    ws.current = null;
+  }, [isAuthenticated, currentUser]);
+
+  useEffect(() => {
+    if (!isAuthenticated || !currentUser || !isOpen || users.length || isLoadingUsers) return;
 
     setIsLoadingUsers(true);
     setLoadError('');
@@ -48,10 +63,10 @@ const ChatWidget = () => {
         setLoadError('Chat tạm thời không khả dụng.');
       })
       .finally(() => setIsLoadingUsers(false));
-  }, [isOpen, users.length, isLoadingUsers, currentUser]);
+  }, [isAuthenticated, isOpen, users.length, isLoadingUsers, currentUser]);
 
   useEffect(() => {
-    if (!currentUser || !selectedUser) return;
+    if (!isAuthenticated || !currentUser || !selectedUser) return;
 
     async function fetchHistory() {
       try {
@@ -66,10 +81,10 @@ const ChatWidget = () => {
     }
 
     fetchHistory();
-  }, [currentUser, selectedUser]);
+  }, [isAuthenticated, currentUser, selectedUser]);
 
   useEffect(() => {
-    if (!currentUser) return undefined;
+    if (!isAuthenticated || !currentUser) return undefined;
 
     let mounted = true;
     let reconnectTimeout;
@@ -106,7 +121,7 @@ const ChatWidget = () => {
       clearTimeout(reconnectTimeout);
       ws.current?.close();
     };
-  }, [currentUser]);
+  }, [isAuthenticated, currentUser]);
 
   function handleSendMessage(event) {
     event.preventDefault();
@@ -143,7 +158,7 @@ const ChatWidget = () => {
   ));
   const canChat = Boolean(currentUser && selectedUser && !loadError);
 
-  if (!currentUser) {
+  if (!isAuthenticated || !currentUser) {
     return null;
   }
 
