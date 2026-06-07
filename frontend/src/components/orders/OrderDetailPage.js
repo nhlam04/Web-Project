@@ -1,19 +1,21 @@
-import React, { useCallback, useEffect, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { Link, useParams } from 'react-router-dom';
 import PageShell from '../shared/PageShell';
 import { cancelOrder, getOrder, listFulfillmentsByOrder } from '../../utils/appApi';
 import { formatVnd } from '../../utils/orderingApi';
 import { formatShippingAddress, formatShippingRecipient } from '../../utils/shippingAddress';
-import { Button, Card, EmptyState, ErrorState, Input, OrderStatusBadge, Skeleton, Toast } from '../shared/designSystem';
+import { Button, Card, EmptyState, ErrorState, Input, OrderStatusBadge, Select, Skeleton, Toast } from '../shared/designSystem';
 import OrderReviewPanel from '../reviews/OrderReviewPanel';
 
 const cancellableStatuses = ['PLACED', 'SELLER_CONFIRMED'];
+const fulfillmentSteps = ['PENDING', 'CONFIRMED', 'SHIPPED', 'DELIVERED', 'COMPLETED'];
 
 const OrderDetailPage = () => {
   const { orderId } = useParams();
   const [order, setOrder] = useState(null);
   const [fulfillments, setFulfillments] = useState([]);
   const [reason, setReason] = useState('Khách hàng yêu cầu hủy đơn');
+  const [selectedHistorySource, setSelectedHistorySource] = useState('order');
   const [message, setMessage] = useState('');
   const [error, setError] = useState('');
   const [busy, setBusy] = useState(false);
@@ -47,6 +49,10 @@ const OrderDetailPage = () => {
       setBusy(false);
     }
   }
+
+  const selectedFulfillment = useMemo(() => (
+    fulfillments.find((item) => String(item.id) === selectedHistorySource) || null
+  ), [fulfillments, selectedHistorySource]);
 
   const canCancel = order ? cancellableStatuses.includes(order.status) : false;
   const itemCount = order?.totals?.totalQuantity || order?.items?.reduce((total, item) => total + Number(item.quantity || 0), 0) || 0;
@@ -126,16 +132,65 @@ const OrderDetailPage = () => {
           </Card>
 
           <section className="ops-grid">
-            <Card>
-              <h3>Lịch sử trạng thái</h3>
-              <ul className="ops-timeline">
-                {order.history?.map((item, index) => (
-                  <li key={`${item.to}-${index}`}>
-                    <strong>{item.to}</strong>
-                    <div className="ops-muted ops-small">{new Date(item.at).toLocaleString('vi-VN')} - {item.reason}</div>
-                  </li>
-                ))}
-              </ul>
+            <Card className="ops-stack">
+              <div className="ops-row">
+                <div>
+                  <h3>Lịch sử trạng thái</h3>
+                  <p className="ops-muted ops-small">Chọn đơn hàng hoặc fulfillment để xem timeline tương ứng.</p>
+                </div>
+                <Select
+                  label="Nguồn trạng thái"
+                  value={selectedHistorySource}
+                  onChange={(event) => setSelectedHistorySource(event.target.value)}
+                >
+                  <option value="order">Đơn hàng tổng</option>
+                  {fulfillments.map((item, index) => (
+                    <option key={item.id} value={String(item.id)}>
+                      Fulfillment #{item.id || index + 1} - Seller {item.sellerId || 'N/A'}
+                    </option>
+                  ))}
+                </Select>
+              </div>
+
+              {selectedFulfillment ? (
+                <>
+                  <div className="ops-row">
+                    <div>
+                      <p><strong>Fulfillment:</strong> {selectedFulfillment.id}</p>
+                      <p className="ops-muted ops-small">Seller: {selectedFulfillment.sellerId || 'N/A'}</p>
+                    </div>
+                    <OrderStatusBadge status={selectedFulfillment.status} />
+                  </div>
+                  <ul className="ops-timeline">
+                    {fulfillmentSteps.map((step) => {
+                      const currentIndex = fulfillmentSteps.indexOf(selectedFulfillment.status);
+                      const stepIndex = fulfillmentSteps.indexOf(step);
+                      return (
+                        <li key={step}>
+                          <strong>{step}</strong>
+                          <div className="ops-muted ops-small">{stepIndex <= currentIndex ? 'Đã đạt mốc' : 'Đang chờ'}</div>
+                        </li>
+                      );
+                    })}
+                  </ul>
+                  <div>
+                    <p className="ops-muted ops-small">Đơn vị vận chuyển: {selectedFulfillment.carrier || 'Chưa có'}</p>
+                    <p className="ops-muted ops-small">Mã theo dõi: {selectedFulfillment.trackingCode || 'Chưa có'}</p>
+                    <p className="ops-muted ops-small">Đã gửi hàng: {selectedFulfillment.shippedAt ? new Date(selectedFulfillment.shippedAt).toLocaleString('vi-VN') : 'Chưa có'}</p>
+                    <p className="ops-muted ops-small">Đã giao hàng: {selectedFulfillment.deliveredAt ? new Date(selectedFulfillment.deliveredAt).toLocaleString('vi-VN') : 'Chưa có'}</p>
+                    <p className="ops-muted ops-small">Hoàn tất: {selectedFulfillment.completedAt ? new Date(selectedFulfillment.completedAt).toLocaleString('vi-VN') : 'Chưa có'}</p>
+                  </div>
+                </>
+              ) : (
+                <ul className="ops-timeline">
+                  {order.history?.map((item, index) => (
+                    <li key={`${item.to}-${index}`}>
+                      <strong>{item.to}</strong>
+                      <div className="ops-muted ops-small">{new Date(item.at).toLocaleString('vi-VN')} - {item.reason}</div>
+                    </li>
+                  ))}
+                </ul>
+              )}
             </Card>
             {canCancel ? (
               <Card className="ops-stack">
