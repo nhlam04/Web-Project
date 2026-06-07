@@ -81,6 +81,12 @@ services:
       DB_NAME: iam
       JWT_SECRET: local-dev-jwt-secret-change-me-1234567890
       JWT_REFRESH_SECRET: local-dev-refresh-secret-change-me-1234567890
+      IAM_SEED_ADMIN_ID: a839435b-dba6-4a3a-a4c2-3dec7700cbc1
+      IAM_SEED_ADMIN_USERNAME: admin
+      IAM_SEED_ADMIN_PASSWORD: admin123
+      IAM_SEED_SELLER_ID: 2b93c32a-5d0f-11f1-bad3-6a081412c2c3
+      IAM_SEED_SELLER_USERNAME: seller_test
+      IAM_SEED_SELLER_PASSWORD: seller123
       RABBITMQ_URL: amqp://admin:admin123@rabbitmq:5672
       ALLOWED_ORIGINS: http://localhost:8080,http://localhost:3000
     ports:
@@ -98,6 +104,8 @@ services:
       DATABASE_URL: mysql+pymysql://admin:password123@mysql:3306/catalog
       RABBITMQ_URL: amqp://admin:admin123@rabbitmq:5672
       RABBITMQ_EXCHANGE: cnweb.events
+      CATALOG_SEED_SELLER_ID: 2b93c32a-5d0f-11f1-bad3-6a081412c2c3
+      CATALOG_FORCE_SEED: "true"
     ports:
       - "8000:8000"
     depends_on:

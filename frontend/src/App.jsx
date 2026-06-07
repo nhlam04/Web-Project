@@ -30,7 +30,6 @@ import SellerDashboard from './pages/seller/SellerDashboard';
 import SellerOrdersPage from './pages/seller/SellerOrdersPage';
 import SellerProductsPage from './pages/seller/SellerProductsPage';
 import SellerProductForm from './pages/seller/SellerProductForm';
-import ShopProfile from './pages/seller/ShopProfile';
 import SellerProfilePage from './pages/seller/SellerProfilePage';
 import SellerNotificationsPage from './pages/seller/SellerNotificationsPage';
 
@@ -76,7 +75,6 @@ export default function App() {
               <Route path="products" element={<SellerProductsPage />} />
               <Route path="products/new" element={<SellerProductForm />} />
               <Route path="products/:productId/edit" element={<SellerProductForm />} />
-              <Route path="shop" element={<ShopProfile />} />
               <Route path="profile" element={<SellerProfilePage />} />
               <Route path="notifications" element={<SellerNotificationsPage />} />
             </Route>

@@ -52,7 +52,18 @@ Yeu cau may cai dat Docker va Docker Compose.
    ```
 
 4. Truy cap Dashboard RabbitMQ:
-   Dia chi: http://localhost:15672 (User/Pass: guest / guest).
+   Dia chi: http://localhost:15672 (User/Pass: admin / admin123).
+
+### Tai khoan khoi tao Docker
+
+Khi chay `docker-compose up -d --build`, IAM Service tu dong dam bao co san cac tai khoan sau neu chua ton tai:
+
+| Vai tro | Username | Password | Trang thai |
+| --- | --- | --- | --- |
+| Admin | `admin` | `admin123` | `ACTIVE` |
+| Seller | `seller_test` | `seller123` | `ACTIVE` |
+
+Seller mac dinh co ID `2b93c32a-5d0f-11f1-bad3-6a081412c2c3`. Catalog Service dung ID nay qua bien `CATALOG_SEED_SELLER_ID` de gan toan bo san pham bootstrap vao seller khoi tao. Khi `CATALOG_FORCE_SEED=true`, Catalog Service se seed lai day du cac catalog va san pham mau luc container khoi dong.
 
 ## Giao Tiep Lien Dich Vu (Events)
 

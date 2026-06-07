@@ -1,6 +1,6 @@
 import React from 'react';
 import { Link, NavLink, Outlet, useNavigate } from 'react-router-dom';
-import { Bell, Boxes, ClipboardList, LayoutDashboard, LogOut, PackagePlus, Settings, User, Users } from 'lucide-react';
+import { Bell, Boxes, ClipboardList, LayoutDashboard, LogOut, PackagePlus, User, Users } from 'lucide-react';
 import { useAuth } from '../components/auth/AuthProvider';
 
 const linksByRole = {
@@ -13,7 +13,6 @@ const linksByRole = {
     { to: '/seller/orders', label: 'Đơn hàng', icon: ClipboardList },
     { to: '/seller/products', label: 'Sản phẩm', icon: Boxes },
     { to: '/seller/products/new', label: 'Tạo sản phẩm', icon: PackagePlus },
-    { to: '/seller/shop', label: 'Hồ sơ shop', icon: Settings },
     { to: '/seller/profile', label: 'Hồ sơ', icon: User },
     { to: '/seller/notifications', label: 'Thông báo', icon: Bell },
   ],

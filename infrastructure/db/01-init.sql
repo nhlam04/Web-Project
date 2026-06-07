@@ -65,4 +65,4 @@ CREATE TABLE IF NOT EXISTS audit_logs (
 -- Username: admin
 -- Password: admin123
 INSERT IGNORE INTO users (id, username, password_hash, role, approval_status) 
-VALUES ('admin', 'admin', '$2a$10$CHizdiKafqYEnIy9.871Je21H61T5eTCbU3ZBD1W8ReSkKES44qAy', 'ADMIN', 'ACTIVE');
+VALUES ('a839435b-dba6-4a3a-a4c2-3dec7700cbc1', 'admin', '$2a$10$CHizdiKafqYEnIy9.871Je21H61T5eTCbU3ZBD1W8ReSkKES44qAy', 'ADMIN', 'ACTIVE');

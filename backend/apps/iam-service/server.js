@@ -28,6 +28,21 @@ const ALLOWED_ACCOUNT_ROLES = new Set(['CUSTOMER', 'SELLER']);
 const ADMIN_MANAGED_ROLES = new Set(['CUSTOMER', 'SELLER', 'ADMIN']);
 const APPROVAL_STATUSES = new Set(['PENDING', 'ACTIVE', 'REJECTED']);
 
+const SEED_USERS = [
+    {
+        id: process.env.IAM_SEED_ADMIN_ID || 'a839435b-dba6-4a3a-a4c2-3dec7700cbc1',
+        username: process.env.IAM_SEED_ADMIN_USERNAME || 'admin',
+        password: process.env.IAM_SEED_ADMIN_PASSWORD || 'admin123',
+        role: 'ADMIN'
+    },
+    {
+        id: process.env.IAM_SEED_SELLER_ID || '2b93c32a-5d0f-11f1-bad3-6a081412c2c3',
+        username: process.env.IAM_SEED_SELLER_USERNAME || 'seller_test',
+        password: process.env.IAM_SEED_SELLER_PASSWORD || 'seller123',
+        role: 'SELLER'
+    }
+];
+
 // Tạo kết nối (Pool) tới MySQL
 const pool = mysql.createPool({
     host: process.env.DB_HOST || 'localhost',
@@ -61,6 +76,24 @@ async function ensureIamSchema() {
     }
 
     await pool.query("UPDATE users SET approval_status = 'ACTIVE' WHERE approval_status IS NULL OR approval_status = ''");
+}
+
+async function ensureSeedUsers() {
+    for (const seedUser of SEED_USERS) {
+        const passwordHash = await bcrypt.hash(seedUser.password, 10);
+        await pool.query(
+            `INSERT INTO users (id, username, password_hash, role, approval_status, failed_login_attempts, locked_until)
+             VALUES (?, ?, ?, ?, 'ACTIVE', 0, NULL)
+             ON DUPLICATE KEY UPDATE
+                username = VALUES(username),
+                password_hash = VALUES(password_hash),
+                role = VALUES(role),
+                approval_status = 'ACTIVE',
+                failed_login_attempts = 0,
+                locked_until = NULL`,
+            [seedUser.id, seedUser.username, passwordHash, seedUser.role]
+        );
+    }
 }
 
 // API Kiểm tra trạng thái & DB
@@ -987,6 +1020,7 @@ async function startOutboxProcessor() {
 startOutboxProcessor();
 
 ensureIamSchema()
+    .then(ensureSeedUsers)
     .then(() => {
         app.listen(PORT, () => {
             console.log(`IAM Service is running on port ${PORT}`);
