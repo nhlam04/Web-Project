@@ -50,7 +50,7 @@ services:
     restart: unless-stopped
     environment:
       RABBITMQ_DEFAULT_USER: admin
-      RABBITMQ_DEFAULT_PASS: &Mw2aU378u_'
+      RABBITMQ_DEFAULT_PASS: aMw2aU378u_'
     healthcheck:
       test: ["CMD-SHELL", "rabbitmq-diagnostics -q ping && rabbitmq-diagnostics -q check_port_connectivity"]
       interval: 10s
