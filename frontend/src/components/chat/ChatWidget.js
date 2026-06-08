@@ -16,6 +16,7 @@ const ChatWidget = () => {
   const [inputValue, setInputValue] = useState('');
   const [isLoadingUsers, setIsLoadingUsers] = useState(false);
   const [loadError, setLoadError] = useState('');
+  const [hasLoaded, setHasLoaded] = useState(false);
 
   const ws = useRef(null);
   const messagesEndRef = useRef(null);
@@ -35,9 +36,16 @@ const ChatWidget = () => {
     setInputValue('');
     setIsLoadingUsers(false);
     setLoadError('');
+    setHasLoaded(false);
     ws.current?.close();
     ws.current = null;
   }, [isAuthenticated, currentUser]);
+
+  useEffect(() => {
+    if (!isOpen) {
+      setHasLoaded(false);
+    }
+  }, [isOpen]);
 
   useEffect(() => {
     function handleOpenChat(e) {
@@ -63,7 +71,7 @@ const ChatWidget = () => {
   }, []);
 
   useEffect(() => {
-    if (!isAuthenticated || !currentUser || !isOpen || users.length || isLoadingUsers) return;
+    if (!isAuthenticated || !currentUser || !isOpen || users.length || hasLoaded || isLoadingUsers) return;
 
     setIsLoadingUsers(true);
     setLoadError('');
@@ -93,18 +101,20 @@ const ChatWidget = () => {
         } else {
           setLoadError('Chưa có đoạn chat nào.');
         }
+        setHasLoaded(true);
       } catch (err) {
         console.error('Lỗi tải users:', err);
         setUsers([]);
         setSelectedUser(null);
         setLoadError('Chat tạm thời không khả dụng.');
+        setHasLoaded(true);
       } finally {
         setIsLoadingUsers(false);
       }
     }
     
     fetchUsers();
-  }, [isAuthenticated, isOpen, users.length, isLoadingUsers, currentUser]);
+  }, [isAuthenticated, isOpen, users.length, hasLoaded, isLoadingUsers, currentUser]);
 
   useEffect(() => {
     if (!isAuthenticated || !currentUser || !selectedUser) return;
