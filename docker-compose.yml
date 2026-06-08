@@ -6,7 +6,7 @@ services:
       MYSQL_ROOT_PASSWORD: root
       MYSQL_DATABASE: iam
       MYSQL_USER: admin
-      MYSQL_PASSWORD: fL-i<87&1/1`
+      MYSQL_PASSWORD: MySqlSecPass987
     volumes:
       - mysql-data:/var/lib/mysql
       - ./infrastructure/db:/docker-entrypoint-initdb.d:ro
@@ -23,7 +23,7 @@ services:
     restart: unless-stopped
     environment:
       POSTGRES_USER: admin
-      POSTGRES_PASSWORD: 672~8Q@y1\u3
+      POSTGRES_PASSWORD: PgSqlSecPass456
       POSTGRES_DB: microservices_db
     volumes:
       - postgres-data:/var/lib/postgresql/data
@@ -50,13 +50,12 @@ services:
     restart: unless-stopped
     environment:
       RABBITMQ_DEFAULT_USER: admin
-      RABBITMQ_DEFAULT_PASS: aMw2aU378u_'
+      RABBITMQ_DEFAULT_PASS: RabbitMqSecPass321
     healthcheck:
-      test: ["CMD-SHELL", "rabbitmq-diagnostics -q ping && rabbitmq-diagnostics -q check_port_connectivity"]
+      test: ["CMD", "rabbitmq-diagnostics", "ping"]
       interval: 10s
-      timeout: 10s
-      retries: 12
-      start_period: 30s
+      timeout: 5s
+      retries: 10
 
   iam-service:
     build:
@@ -68,7 +67,7 @@ services:
       PORT: 3001
       DB_HOST: mysql
       DB_USER: admin
-      DB_PASS: fL-i<87&1/1`
+      DB_PASS: MySqlSecPass987
       DB_NAME: iam
       JWT_SECRET: 1yC3D{,GvT[,}}0}L^"nQULZ{/t!s3e£}}aRrI5&
       JWT_REFRESH_SECRET: -ZEZTtRWGU4Yy3Gazo=N1O9n\8tH?r0-.Y+-%ui"
@@ -78,7 +77,7 @@ services:
       IAM_SEED_SELLER_ID: 2b93c32a-5d0f-11f1-bad3-6a081412c2c3
       IAM_SEED_SELLER_USERNAME: seller_test
       IAM_SEED_SELLER_PASSWORD: seller123
-      RABBITMQ_URL: amqp://admin:&Mw2aU378u_'@rabbitmq:5672
+      RABBITMQ_URL: amqp://admin:RabbitMqSecPass321@rabbitmq:5672
       ALLOWED_ORIGINS: http://localhost:8080,http://localhost:3000
     depends_on:
       mysql:
@@ -90,8 +89,8 @@ services:
     build: ./catalog_chat
     restart: unless-stopped
     environment:
-      DATABASE_URL: mysql+pymysql://admin:fL-i<87&1/1`@mysql:3306/catalog
-      RABBITMQ_URL: amqp://admin:&Mw2aU378u_'@rabbitmq:5672
+      DATABASE_URL: mysql+pymysql://admin:MySqlSecPass987@mysql:3306/catalog
+      RABBITMQ_URL: amqp://admin:RabbitMqSecPass321@rabbitmq:5672
       RABBITMQ_EXCHANGE: cnweb.events
       CATALOG_SEED_SELLER_ID: 2b93c32a-5d0f-11f1-bad3-6a081412c2c3
       CATALOG_FORCE_SEED: "true"
@@ -114,9 +113,9 @@ services:
       DB_HOST: postgres
       DB_PORT: 5432
       DB_USER: admin
-      DB_PASS: 672~8Q@y1\u3
+      DB_PASS: PgSqlSecPass456
       DB_NAME: microservices_db
-      RABBITMQ_URL: amqp://admin:&Mw2aU378u_'@rabbitmq:5672
+      RABBITMQ_URL: amqp://admin:RabbitMqSecPass321@rabbitmq:5672
       RABBITMQ_EXCHANGE: cnweb.events
       IAM_BASE_URL: http://iam-service:3001
       CATALOG_BASE_URL: http://catalog-service:8000
@@ -139,10 +138,10 @@ services:
       DB_HOST: mysql
       DB_PORT: 3306
       DB_USER: admin
-      DB_PASSWORD: fL-i<87&1/1`
+      DB_PASSWORD: MySqlSecPass987
       DB_NAME: fulfillment
       TYPEORM_SYNCHRONIZE: "true"
-      RABBITMQ_URL: amqp://admin:&Mw2aU378u_'@rabbitmq:5672
+      RABBITMQ_URL: amqp://admin:RabbitMqSecPass321@rabbitmq:5672
       EVENT_EXCHANGE: cnweb.events
     healthcheck:
       test:
@@ -171,10 +170,10 @@ services:
       DB_HOST: mysql
       DB_PORT: 3306
       DB_USER: admin
-      DB_PASSWORD: fL-i<87&1/1`
+      DB_PASSWORD: MySqlSecPass987
       DB_NAME: review
       TYPEORM_SYNCHRONIZE: "true"
-      RABBITMQ_URL: amqp://admin:&Mw2aU378u_'@rabbitmq:5672
+      RABBITMQ_URL: amqp://admin:RabbitMqSecPass321@rabbitmq:5672
       EVENT_EXCHANGE: cnweb.events
     healthcheck:
       test:
@@ -203,9 +202,9 @@ services:
       DB_HOST: postgres
       DB_PORT: 5432
       DB_USER: admin
-      DB_PASS: 672~8Q@y1\u3
+      DB_PASS: PgSqlSecPass456
       DB_NAME: microservices_db
-      RABBITMQ_URL: amqp://admin:&Mw2aU378u_'@rabbitmq:5672
+      RABBITMQ_URL: amqp://admin:RabbitMqSecPass321@rabbitmq:5672
       RABBITMQ_EXCHANGE: cnweb.events
       IAM_BASE_URL: http://iam-service:3001
       NOTIFICATION_AUTH_REQUIRED: "false"
