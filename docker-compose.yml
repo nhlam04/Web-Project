@@ -94,6 +94,7 @@ services:
       RABBITMQ_EXCHANGE: cnweb.events
       CATALOG_SEED_SELLER_ID: 2b93c32a-5d0f-11f1-bad3-6a081412c2c3
       CATALOG_FORCE_SEED: "true"
+      MONGODB_URL: mongodb://mongodb:27017
     depends_on:
       mysql:
         condition: service_healthy
