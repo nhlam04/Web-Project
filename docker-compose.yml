@@ -78,7 +78,7 @@ services:
       IAM_SEED_SELLER_USERNAME: seller_test
       IAM_SEED_SELLER_PASSWORD: seller123
       RABBITMQ_URL: amqp://admin:RabbitMqSecPass321@rabbitmq:5672
-      ALLOWED_ORIGINS: http://localhost:8080,http://localhost:3000
+      ALLOWED_ORIGINS: https://188.166.226.203.sslip.io,http://localhost:8080,http://localhost:3000
     depends_on:
       mysql:
         condition: service_healthy
@@ -120,7 +120,7 @@ services:
       IAM_BASE_URL: http://iam-service:3001
       CATALOG_BASE_URL: http://catalog-service:8000
       ORDERING_AUTH_REQUIRED: "false"
-      ALLOWED_ORIGINS: http://localhost:8080,http://localhost:3000
+      ALLOWED_ORIGINS: https://188.166.226.203.sslip.io,http://localhost:8080,http://localhost:3000
     depends_on:
       postgres:
         condition: service_healthy
@@ -208,7 +208,7 @@ services:
       RABBITMQ_EXCHANGE: cnweb.events
       IAM_BASE_URL: http://iam-service:3001
       NOTIFICATION_AUTH_REQUIRED: "false"
-      ALLOWED_ORIGINS: http://localhost:8080,http://localhost:3000
+      ALLOWED_ORIGINS: https://188.166.226.203.sslip.io,http://localhost:8080,http://localhost:3000
     depends_on:
       postgres:
         condition: service_healthy
