@@ -6,9 +6,7 @@ services:
       MYSQL_ROOT_PASSWORD: root
       MYSQL_DATABASE: iam
       MYSQL_USER: admin
-      MYSQL_PASSWORD: password123
-    ports:
-      - "3306:3306"
+      MYSQL_PASSWORD: fL-i<87&1/1`
     volumes:
       - mysql-data:/var/lib/mysql
       - ./infrastructure/db:/docker-entrypoint-initdb.d:ro
@@ -25,10 +23,8 @@ services:
     restart: unless-stopped
     environment:
       POSTGRES_USER: admin
-      POSTGRES_PASSWORD: password123
+      POSTGRES_PASSWORD: 672~8Q@y1\u3
       POSTGRES_DB: microservices_db
-    ports:
-      - "5432:5432"
     volumes:
       - postgres-data:/var/lib/postgresql/data
     healthcheck:
@@ -41,8 +37,6 @@ services:
   mongodb:
     image: mongo:latest
     restart: unless-stopped
-    ports:
-      - "27017:27017"
     volumes:
       - mongodb-data:/data/db
     healthcheck:
@@ -56,10 +50,7 @@ services:
     restart: unless-stopped
     environment:
       RABBITMQ_DEFAULT_USER: admin
-      RABBITMQ_DEFAULT_PASS: admin123
-    ports:
-      - "5672:5672"
-      - "15672:15672"
+      RABBITMQ_DEFAULT_PASS: &Mw2aU378u_'
     healthcheck:
       test: ["CMD-SHELL", "rabbitmq-diagnostics -q ping && rabbitmq-diagnostics -q check_port_connectivity"]
       interval: 10s
@@ -77,20 +68,18 @@ services:
       PORT: 3001
       DB_HOST: mysql
       DB_USER: admin
-      DB_PASS: password123
+      DB_PASS: fL-i<87&1/1`
       DB_NAME: iam
-      JWT_SECRET: local-dev-jwt-secret-change-me-1234567890
-      JWT_REFRESH_SECRET: local-dev-refresh-secret-change-me-1234567890
+      JWT_SECRET: 1yC3D{,GvT[,}}0}L^"nQULZ{/t!s3e£}}aRrI5&
+      JWT_REFRESH_SECRET: -ZEZTtRWGU4Yy3Gazo=N1O9n\8tH?r0-.Y+-%ui"
       IAM_SEED_ADMIN_ID: a839435b-dba6-4a3a-a4c2-3dec7700cbc1
       IAM_SEED_ADMIN_USERNAME: admin
       IAM_SEED_ADMIN_PASSWORD: admin123
       IAM_SEED_SELLER_ID: 2b93c32a-5d0f-11f1-bad3-6a081412c2c3
       IAM_SEED_SELLER_USERNAME: seller_test
       IAM_SEED_SELLER_PASSWORD: seller123
-      RABBITMQ_URL: amqp://admin:admin123@rabbitmq:5672
+      RABBITMQ_URL: amqp://admin:&Mw2aU378u_'@rabbitmq:5672
       ALLOWED_ORIGINS: http://localhost:8080,http://localhost:3000
-    ports:
-      - "3001:3001"
     depends_on:
       mysql:
         condition: service_healthy
@@ -101,13 +90,11 @@ services:
     build: ./catalog_chat
     restart: unless-stopped
     environment:
-      DATABASE_URL: mysql+pymysql://admin:password123@mysql:3306/catalog
-      RABBITMQ_URL: amqp://admin:admin123@rabbitmq:5672
+      DATABASE_URL: mysql+pymysql://admin:fL-i<87&1/1`@mysql:3306/catalog
+      RABBITMQ_URL: amqp://admin:&Mw2aU378u_'@rabbitmq:5672
       RABBITMQ_EXCHANGE: cnweb.events
       CATALOG_SEED_SELLER_ID: 2b93c32a-5d0f-11f1-bad3-6a081412c2c3
       CATALOG_FORCE_SEED: "true"
-    ports:
-      - "8000:8000"
     depends_on:
       mysql:
         condition: service_healthy
@@ -127,16 +114,14 @@ services:
       DB_HOST: postgres
       DB_PORT: 5432
       DB_USER: admin
-      DB_PASS: password123
+      DB_PASS: 672~8Q@y1\u3
       DB_NAME: microservices_db
-      RABBITMQ_URL: amqp://admin:admin123@rabbitmq:5672
+      RABBITMQ_URL: amqp://admin:&Mw2aU378u_'@rabbitmq:5672
       RABBITMQ_EXCHANGE: cnweb.events
       IAM_BASE_URL: http://iam-service:3001
       CATALOG_BASE_URL: http://catalog-service:8000
       ORDERING_AUTH_REQUIRED: "false"
       ALLOWED_ORIGINS: http://localhost:8080,http://localhost:3000
-    ports:
-      - "8083:8083"
     depends_on:
       postgres:
         condition: service_healthy
@@ -154,13 +139,11 @@ services:
       DB_HOST: mysql
       DB_PORT: 3306
       DB_USER: admin
-      DB_PASSWORD: password123
+      DB_PASSWORD: fL-i<87&1/1`
       DB_NAME: fulfillment
       TYPEORM_SYNCHRONIZE: "true"
-      RABBITMQ_URL: amqp://admin:admin123@rabbitmq:5672
+      RABBITMQ_URL: amqp://admin:&Mw2aU378u_'@rabbitmq:5672
       EVENT_EXCHANGE: cnweb.events
-    ports:
-      - "3002:3002"
     healthcheck:
       test:
         [
@@ -188,13 +171,11 @@ services:
       DB_HOST: mysql
       DB_PORT: 3306
       DB_USER: admin
-      DB_PASSWORD: password123
+      DB_PASSWORD: fL-i<87&1/1`
       DB_NAME: review
       TYPEORM_SYNCHRONIZE: "true"
-      RABBITMQ_URL: amqp://admin:admin123@rabbitmq:5672
+      RABBITMQ_URL: amqp://admin:&Mw2aU378u_'@rabbitmq:5672
       EVENT_EXCHANGE: cnweb.events
-    ports:
-      - "3003:3003"
     healthcheck:
       test:
         [
@@ -222,15 +203,13 @@ services:
       DB_HOST: postgres
       DB_PORT: 5432
       DB_USER: admin
-      DB_PASS: password123
+      DB_PASS: 672~8Q@y1\u3
       DB_NAME: microservices_db
-      RABBITMQ_URL: amqp://admin:admin123@rabbitmq:5672
+      RABBITMQ_URL: amqp://admin:&Mw2aU378u_'@rabbitmq:5672
       RABBITMQ_EXCHANGE: cnweb.events
       IAM_BASE_URL: http://iam-service:3001
       NOTIFICATION_AUTH_REQUIRED: "false"
       ALLOWED_ORIGINS: http://localhost:8080,http://localhost:3000
-    ports:
-      - "8086:8086"
     depends_on:
       postgres:
         condition: service_healthy
@@ -241,7 +220,7 @@ services:
     image: adminer:latest
     restart: unless-stopped
     ports:
-      - "8081:8080"
+      - "127.0.0.1:8081:8080"
     depends_on:
       mysql:
         condition: service_healthy
@@ -258,14 +237,12 @@ services:
         VITE_FULFILLMENT_URL: /api/fulfillment
         VITE_NOTIFICATION_URL: /api/notification
         VITE_REVIEW_URL: /api/reviews
-    ports:
-      - "3000:80"
 
   api-gateway:
     image: nginx:alpine
     restart: unless-stopped
     ports:
-      - "8080:80"
+      - "127.0.0.1:8080:80"
     volumes:
       - ./infrastructure/api-gateway/nginx.conf:/etc/nginx/nginx.conf:ro
     depends_on:
